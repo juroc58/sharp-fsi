@@ -33,7 +33,7 @@ FSI run: 4.0 revolutions, 838 steps
    79.2%  t=  3.32s  phi=   63.1  alpha= -2.71  psi=-10.31  Cl=-0.590  wake=315
    89.1%  t=  3.74s  phi=  205.7  alpha=-32.35  psi=-15.26  Cl=-1.811  wake=337
    99.0%  t=  4.15s  phi=  348.4  alpha= -2.69  psi=-23.68  Cl=-1.419  wake=357
-  done: 838 steps in 6.0s (7.21 ms/step, mean coupling iters 2.93)
+  done: 838 steps in 7.4s (8.89 ms/step, mean coupling iters 2.93)
 history saved to fsi_validation_history_tsr3p00_stall.txt (838 rows)
 
 ------------------------------------------------------------------

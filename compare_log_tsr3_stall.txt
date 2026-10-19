@@ -1,5 +1,5 @@
 ==============================================================================
-sharpFSI (2-D DVM + CPPC) vs sharp_proj BEM   TSR = 3.00, 4 revolutions, FSI aero = stall
+sharpFSI (2-D DVM + CPPC) vs sharp-vawt-lab BEM   TSR = 3.00, 4 revolutions, FSI aero = stall
 ==============================================================================
 history saved to fsi_history_bem_stall_tsr3p00.txt (838 rows)
 FSI: 838 steps, 359 wake vortices, mean coupling iters 2.93, <Cp>=-0.2824

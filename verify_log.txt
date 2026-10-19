@@ -41,8 +41,8 @@ F8/F9: coupled FSI sanity run (0.4 rev, coarse)
   [PASS] F8 one vortex shed per step  nw+merges=126 steps=126
   [PASS] F9 unsteady term vanishes at steady state  |Cl_unsteady-on - Cl_off|=9.08e-04
 
-F10: kinematics cross-check against sharp_proj
-  [PASS] F10 kinematics match sharp_proj kernel (alpha)  max|dalpha|=3.98e-12 deg over 3142 azimuths
+F10: kinematics cross-check against sharp-vawt-lab
+  [PASS] F10 kinematics match sharp-vawt-lab kernel (alpha)  max|dalpha|=3.98e-12 deg over 3142 azimuths
   [PASS] F10 blade reference radius = R at zero pitch  |X_ref|=5.000000000 m, R=5.0 m
 
 F11: stall correction is transparent while attached
