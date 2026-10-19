@@ -11,14 +11,14 @@
   control (CPPC) and elastic pitch stops, matching the geometry, mass properties
   and pitch-stop model of the independent BEM code
   [`juroc58/sharp-vawt-lab`](https://github.com/juroc58/sharp-vawt-lab)
-  (`vawt_core.py`, referred to below as **`sharp_proj`**, its local directory name);
+  (`vawt_core.py`, referred to below as **`sharp-vawt-lab`**, its local directory name);
 * **coupling** — a partitioned two-way implicit (fixed-point, under-relaxed)
   scheme, two to three coupling iterations per time step;
 * **aerodynamics of a real blade** — an optional semi-empirical static /
   dynamic-stall and separated-drag correction layer that is *exactly transparent*
   in attached flow, so none of the verified potential-flow behaviour is altered;
 * **validation** — a 54-check verification suite (F1–F19) and a head-to-head
-  comparison against the independent BEM solver `sharp_proj`, using four
+  comparison against the independent BEM solver `sharp-vawt-lab`, using four
   progressively better-matched BEM aerodynamic models.
 
 ### Relationship to sharp-vawt-lab
@@ -33,10 +33,11 @@ wake treatment (free vortex wake vs induction factors), same geometry, mass
 properties and pitch equation.
 
 `compare_with_bem.py`, the optional tabulated NACA 0012 polar and the F10
-cross-code check need `sharp-vawt-lab` cloned alongside (default
-`~/Documents/sharp_proj`, override with `SHARP_PROJ`). Everything else —
-`verify_solver.py` except F10, `run_validation.py`, `design_study.py` — is
-self-contained.
+cross-code check need `sharp-vawt-lab` cloned alongside. Point the
+`SHARP_VAWT_LAB` environment variable at its root, or clone it as a sibling
+directory called `sharp-vawt-lab`; `ref_solver.py` documents the search order and
+prints every path it tried. Everything else — `verify_solver.py` except F10,
+`run_validation.py`, `design_study.py` — is self-contained.
 
 ---
 
@@ -46,14 +47,14 @@ Python 3 with **NumPy, SciPy and Matplotlib only**. There are no
 compiled extensions, no OpenFOAM, no Numba and no AVX-dependent wheels — the code
 is pure NumPy and vectorised (SciPy supplies the `cdist` distance matrix in the
 wake–wake induction kernel), so it runs on an old CPU (developed and tested on an
-AMD A8-6600K, 4 threads, 8 GB DDR3). Use `python3` (there is no `python` alias on
-the development box).
+AMD A8-6600K, 4 threads, 8 GB DDR3). Invoke it as `python3`.
 
 ```bash
+python3 ref_solver.py                          # where the reference solver was found
 python3 verify_solver.py                       # 54-check verification suite (F1-F19)
 python3 run_validation.py                      # matched TSR=1 run (canonical config)
 python3 run_validation.py 4 0.005 3.0 stall    # 4 revs, dt=5 ms, TSR=3, stall ON
-python3 compare_with_bem.py 1.0 4 potential    # 4-rev TSR=1 comparison vs sharp_proj
+python3 compare_with_bem.py 1.0 4 potential    # 4-rev TSR=1 comparison vs sharp-vawt-lab
 python3 compare_with_bem.py 1.0 4 stall        # same, with the stall layer on
 python3 design_study.py both stall 2.0         # TSR sweep + counterweight map
 python3 pitch_moment_check.py 1.0 stall        # pitch-axis moment diagnostic vs BEM
@@ -66,8 +67,10 @@ each other.
 
 **External dependency.** The FSI suite itself is self-contained, but the
 head-to-head comparison (`compare_with_bem.py`) and the optional tabulated NACA
-0012 polar need the independent BEM code: it is imported from
-`~/Documents/sharp_proj` (override with the `SHARP_PROJ` environment variable).
+0012 polar need the independent BEM code
+([`sharp-vawt-lab`](https://github.com/juroc58/sharp-vawt-lab)), which is *not*
+vendored here. Clone it and point `SHARP_VAWT_LAB` at the clone root, or clone it
+as a sibling directory called `sharp-vawt-lab` (see `ref_solver.py`).
 `verify_solver.py` detects its absence and skips the cross-code checks (F10) with
 a clear message; everything else runs without it.
 
@@ -83,7 +86,8 @@ a clear message; everything else runs without it.
 | `fsi_main.py` | `FSICoupler` — partitioned two-way coupling, arm-corrected kinematics, history recording |
 | `verify_solver.py` | verification suite F1–F19 + figures (`verify_*.png`) |
 | `run_validation.py` | production validation run (history + phase portrait + time histories) |
-| `compare_with_bem.py` | head-to-head comparison against `sharp_proj` (four BEM aero models) |
+| `ref_solver.py` | locates a local clone of the reference solver `sharp-vawt-lab` (no machine-specific paths; `SHARP_VAWT_LAB` or a sibling clone) |
+| `compare_with_bem.py` | head-to-head comparison against `sharp-vawt-lab` (four BEM aero models) |
 | `pitch_moment_check.py` | pitch-axis aerodynamic-moment diagnostic (reconstructs the BEM's moment by inverting the pitch dynamics) |
 | `moment_model_check.py` | closed-form comparison of the separated pitching-moment models + load-integration check (`moment_model_check.png`) |
 | `design_study.py` | TSR sweep and counterweight map (`design_*.csv`, `design_study_*.png`) |
@@ -224,13 +228,13 @@ transparent there), the post-stall branch is the Viterna–Corrigan extension, a
 angles beyond 90° are obtained from the physical reflection
 `Cl(180−|α|) = −Cl(|α|)`, `Cd(180−|α|) = Cd(|α|)`. `StaticPolar.from_csv` reads
 `alpha_deg, Cl, Cd[, Cm]` tables (e.g. the Sheldahl–Klimas NACA 0012 data), and
-`StaticPolar.naca0012(re=…)` searches `sharp_proj/airfoil_polars/naca0012/`
-(and the older `sharp_proj/polars/naca0012/` layout).
+`StaticPolar.naca0012(re=…)` searches `sharp-vawt-lab/airfoil_polars/naca0012/`
+(and the older `sharp-vawt-lab/polars/naca0012/` layout).
 
 ### 3.4 Structure (CPPC rocking pitch)
 
 Geometry, mass properties and the pitch-stop model are identical to
-`sharp_proj`'s `Geometry`/`MassProps`: the pitch axis sits at chord coordinate
+`sharp-vawt-lab`'s `Geometry`/`MassProps`: the pitch axis sits at chord coordinate
 `sp·c`, the blade CG at `cg_blade·c`, and the counterweight of mass `m_cw` at
 chord coordinate `ξ_cw` measured from the pitch axis. The single DOF is the pitch
 `ψ` about the rocking-arm pivot at `Rp = R − ar·c`, with polar inertia
@@ -266,7 +270,7 @@ sides, the scheme is stable without sub-stepping for the dt used here.
 The aero reference point is carried on the rocking arm, and the pivot is at
 `Rp = R − ar·c`; the solver's `x = 0` reference is the quarter chord when
 `sp = 0.25`. The kinematics (chord direction, normal, rigid-body velocity field
-and the effective angle of attack) reproduce `sharp_proj`'s BEM kernel to
+and the effective angle of attack) reproduce `sharp-vawt-lab`'s BEM kernel to
 **4·10⁻¹² degrees** over a full azimuth sweep (F10), and the blade reference
 radius is exactly `R` at zero pitch.
 
@@ -295,7 +299,7 @@ Run `python3 verify_solver.py` (≈8 min single-threaded on the A8-6600K). Figur
 | **F7** | elastic stop law `ψ = −(win + Q/k_s)` | −25.55° vs model −25.69° |
 | **F8** | coupled run finite, wake bounded | γ-budget −2.1e-14, `nw+merges = steps`, 1 vortex shed per step |
 | **F9** | unsteady term vanishes at steady state | ‖ΔCl‖ = 9.1e-04 |
-| **F10** | kinematics vs `sharp_proj` BEM kernel | max‖Δα‖ = 4.0e-12° |
+| **F10** | kinematics vs `sharp-vawt-lab` BEM kernel | max‖Δα‖ = 4.0e-12° |
 | **F11** | stall layer transparent while attached | `κ ≡ 1`, max‖ΔCl‖ = 4.4e-16, max‖ΔCm‖ = 0 |
 | **F12** | corrected loads recover the static polar | max‖ΔCl‖ = 0.0038, max‖ΔCd‖ = 0.0070 |
 | **F13** | deep-stall limits | `Cl(90°) = 0`, `Cd(90°) = 2`, `Cl(170°) = −1.0911` (= reflected polar), `Cm(90°) = −0.495` nose-down |
@@ -308,7 +312,7 @@ Run `python3 verify_solver.py` (≈8 min single-threaded on the A8-6600K). Figur
 
 ---
 
-## 5. Validation against the BEM solver `sharp_proj`
+## 5. Validation against the BEM solver `sharp-vawt-lab`
 
 `compare_with_bem.py` runs the *same* rotor and structural data through both codes
 (R = 5 m, c = 1 m, N = 1 blade, ar = 0.35, sp = 0.25, m_b = 5 kg with CG at 0.25c,
@@ -626,5 +630,6 @@ deserialised wake cores, and the age-decimation wake.
   Darrieus turbines" (post-stall polar extension).
 * Sheldahl & Klimas, NACA 0012 polars (used by `StaticPolar.naca0012`).
 * J. G. Leishman & T. S. Beddoes, dynamic stall (separation lag, vortex lift).
-* The independent BEM/CPPC solver in `~/Documents/sharp_proj`
+* The independent BEM/CPPC solver
+  [`sharp-vawt-lab`](https://github.com/juroc58/sharp-vawt-lab)
   (`vawt_core.py`), used as the cross-validation reference.

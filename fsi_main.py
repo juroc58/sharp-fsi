@@ -35,8 +35,8 @@ Two different points are involved and must not be confused:
         X_ref = X_pivot + ar*c*n_hat(beta),      n_hat = z_hat x xi_hat,
 
     i.e. at radius R at zero pitch -- exactly the arrangement of the CPPC in
-    sharp_proj (its `stq/srq` quarter-chord offsets).  A check that the FSI
-    kinematics reproduce sharp_proj's kernel formulas identically (u1,u2 and
+    sharp-vawt-lab (its `stq/srq` quarter-chord offsets).  A check that the FSI
+    kinematics reproduce sharp-vawt-lab's kernel formulas identically (u1,u2 and
     alpha) to 1e-15 is in /tmp/opencode/kin_check.py.
 
 The fluid solver works entirely about X_ref.  The structural model needs the
@@ -189,7 +189,7 @@ class FSICoupler:
 
         The blade is carried on a rocking arm of length ar*c measured from the
         structural pivot along the local "nose-out" normal n_hat = z_hat x xi_hat
-        (this is the arrangement of the CPPC in sharp_proj: the quarter chord
+        (this is the arrangement of the CPPC in sharp-vawt-lab: the quarter chord
         sits at radius Rp + ar*c ~= R at psi = 0).  Since the arm+blade rotate
         rigidly about the pivot with angular velocity (omega - psi_dot), the
         velocity of the reference point follows from the rigid-body field.

@@ -707,7 +707,7 @@ class DVMFluidSolver:
 class VAWTFluidSolver:
     """DVM section solver driven by rotor azimuth and pitch angle.
 
-    Geometry (matches the Sharp cycloturbine layout used in sharp_proj):
+    Geometry (matches the Sharp cycloturbine layout used in sharp-vawt-lab):
       * rotor radius R is the radius of the blade pitch axis (spar) at zero
         pitch, i.e. the rocking-arm tip;
       * the pitch axis / rocking pivot sits at radius Rp = R - ar*c;

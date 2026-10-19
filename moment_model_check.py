@@ -69,7 +69,7 @@ def main():
         # against the *separated-polar* moment, which only exists when the stall
         # layer is active (a potential run reports the DVM's own ~zero Cm)
         for cand in ('fsi_history_bem_stall_tsr1p00.txt',
-                     'fsi_history_bem_tsr1p00.txt',
+                     'fsi_history_bem_potential_tsr1p00.txt',
                      'fsi_validation_history_tsr3p00_stall.txt',
                      'fsi_validation_history.txt'):
             if os.path.exists(cand):

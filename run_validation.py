@@ -17,7 +17,7 @@ Usage:  python3 run_validation.py [n_rev] [dt] [tsr] [aero]
   tsr   : tip-speed ratio omega*R/U             (default 1.0 = matched config)
   aero  : aerodynamic model
             potential  pure potential flow, no stall (the matched config for
-                       the sharp_proj comparison)                [default]
+                       the sharp-vawt-lab comparison)                [default]
             stall      potential flow + built-in Viterna/dynamic-stall
                        correction layer (aero_correction.py)
             naca       + dynamic stall on a tabulated NACA 0012 polar

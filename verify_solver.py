@@ -19,8 +19,8 @@ analytical benchmark is quantified here rather than assumed.
   F8  Coupled run: finite, Kelvin budget conserved, wake bounded, stops held
   F9  Unsteady (apparent-mass) term vanishes in the steady state
   F10 Kinematics cross-check: the coupled blade kinematics (rocking arm,
-      radii, sign conventions) reproduce sharp_proj's BEM kernel exactly
-      (skipped if ~/Documents/sharp_proj is not importable)
+      radii, sign conventions) reproduce sharp-vawt-lab's BEM kernel exactly
+      (skipped if the reference solver is not available; see ref_solver.py)
 
 Run:  python3 verify_solver.py     (writes verify_*.png)
 """
@@ -34,6 +34,9 @@ import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import ref_solver                                                     # noqa: E402
 
 from fluid_solver import DVMFluidSolver
 from structural_solver import CPPCParams, CPPCStructural
@@ -251,7 +254,7 @@ def test_coupled():
 
 # ---------------------------------------------------------------------------
 def test_bem_kinematics():
-    """F10: cross-check the blade kinematics against sharp_proj's BEM kernel.
+    """F10: cross-check the blade kinematics against sharp-vawt-lab's BEM kernel.
 
     With the pitch prescribed at a constant value the two codes must report the
     same effective angle of attack at every azimuth.  This exercises the
@@ -259,18 +262,19 @@ def test_bem_kinematics():
     (the aero reference sits at R, the pivot at R - ar*c) and the sign
     conventions of the coupled kinematics.
     """
-    print("\nF10: kinematics cross-check against sharp_proj")
-    sharp_proj = os.path.expanduser('~/Documents/sharp_proj')
-    if not os.path.isdir(sharp_proj):
-        print("  [SKIP] ~/Documents/sharp_proj not found")
+    print("\nF10: kinematics cross-check against sharp-vawt-lab")
+    root = ref_solver.find()
+    if root is None:
+        print("  [SKIP] reference solver sharp-vawt-lab not found "
+              "(set SHARP_VAWT_LAB to its root)")
         return None
-    if sharp_proj not in sys.path:
-        sys.path.insert(0, sharp_proj)
+    if root not in sys.path:
+        sys.path.insert(0, root)
     try:
         from vawt_core import (Geometry, MassProps, AeroConfig, SimConfig,
                                PolarDatabase, CycloturbineSim)
     except Exception as exc:                                    # pragma: no cover
-        print(f"  [SKIP] sharp_proj import failed: {exc}")
+        print(f"  [SKIP] sharp-vawt-lab import failed: {exc}")
         return None
 
     R, c, ar, sp, U, tsr, psi0 = 5.0, 1.0, 0.35, 0.25, 10.0, 1.0, 5.0
@@ -278,11 +282,9 @@ def test_bem_kinematics():
     g = Geometry(R=R, c=c, H=1.0, N=1, ar=ar, sp=sp)
     ms = MassProps(mb=5.0, xbcg=0.25, mc=2.5, dcw=-0.60)
     # NOTE: a callable polar database is passed below, so AeroConfig.polar_dir
-    # is not used for the physics; resolve it anyway (old/new sharp_proj layout)
-    # so nothing dangles if that ever changes.
-    _pdir = next((os.path.join(sharp_proj, *r) for r in
-                  (('airfoil_polars', 'naca0012'), ('polars', 'naca0012'))
-                  if os.path.isdir(os.path.join(sharp_proj, *r))), '')
+    # is not used for the physics; resolve it anyway (either table layout) so
+    # nothing dangles if that ever changes.
+    _pdir = ref_solver.polar_dir(root) or ''
     ae = AeroConfig(polar_dir=_pdir,
                     use_dynamic_stall=False, use_tip_loss=False, use_dmst=False,
                     use_dynamic_inflow=False, use_flow_curvature=False,
@@ -312,7 +314,7 @@ def test_bem_kinematics():
         rref.append(float(np.hypot(*x_ref)))
     al = np.degrees(np.array(al))
     dalpha = np.abs((al - np.degrees(alpha_b) + 180.0) % 360.0 - 180.0)
-    note("F10 kinematics match sharp_proj kernel (alpha)",
+    note("F10 kinematics match sharp-vawt-lab kernel (alpha)",
          dalpha.max() < 1e-6,
          f"max|dalpha|={dalpha.max():.2e} deg over {len(al)} azimuths")
     # blade aero reference must sit at radius R at psi = 0
@@ -898,11 +900,11 @@ def main():
         phi_b, alpha_b, alpha_m = kin
         fig, ax = plt.subplots(figsize=(7, 4.5))
         ax.plot(np.degrees(phi_b), alpha_b, 'k-', lw=3, alpha=0.35,
-                label='sharp_proj BEM kernel')
+                label='sharp-vawt-lab BEM kernel')
         ax.plot(np.degrees(phi_b), alpha_m, 'r--', lw=1.2, label='sharpFSI')
         ax.set_xlabel('azimuth $\\phi$ (deg)')
         ax.set_ylabel('effective $\\alpha$ (deg)')
-        ax.set_title('F10: coupled kinematics vs sharp_proj (prescribed pitch)')
+        ax.set_title('F10: coupled kinematics vs sharp-vawt-lab (prescribed pitch)')
         ax.legend(fontsize=8); ax.grid(alpha=0.3)
         fig.tight_layout(); fig.savefig('verify_kinematics.png', dpi=140)
         plt.close(fig)

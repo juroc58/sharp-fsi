@@ -4,7 +4,7 @@ structural_solver.py
 1-DOF rotational (rocking-pitch) structural model with Centrifugal Pendulum
 Pitch Control (CPPC), for the sharp cycloturbine blade layout.  Pure NumPy.
 
-GEOMETRY (identical to sharp_proj's Geometry/MassProps so that the two codes
+GEOMETRY (identical to sharp-vawt-lab's Geometry/MassProps so that the two codes
 can be compared directly)
 --------------------------------------------------------------------------
                        blade chord line
@@ -15,7 +15,7 @@ can be compared directly)
                           rocking pivot  (radius Rp = R - ar*c from shaft)
 
 * The rotor spins about the shaft at constant angular speed omega (the FSI
-  targets fixed-rpm operation, exactly like sharp_proj's free=False mode);
+  targets fixed-rpm operation, exactly like sharp-vawt-lab's free=False mode);
   azimuth phi is measured CCW from the wind direction.
 * psi is the rocking (pitch) angle about the pivot, positive = nose-out.
   The blade frame angle (used by the fluid solver) is  beta = phi - psi, and
@@ -25,7 +25,7 @@ can be compared directly)
 * Blade CG at chord coordinate xi_b = (cg_blade - sp)*c; counterweight mass
   m_cw at chord coordinate xi_cw (m, measured from the pitch axis).  Both are
   rigidly mounted on the rocking arm, hence both carry an (ar*c)^2 inertia
-  term -- same convention as sharp_proj's Ip formula.
+  term -- same convention as sharp-vawt-lab's Ip formula.
 
 DYNAMICS (constant rotor speed)
 -------------------------------
@@ -40,7 +40,7 @@ with the total CG at
                                                       equilibrium)
     Q_cent = M * omega^2 * Rp * s_t                  (centrifugal restoring
                                                       moment; equals
-                                                      sharp_proj's  X - Qp)
+                                                      sharp-vawt-lab's  X - Qp)
     Q_aero = -Mz   (Mz = aero torque about the pitch axis from the fluid
                     solver, so Q_aero is the generalised moment conjugate to
                     psi)
@@ -48,7 +48,7 @@ with the total CG at
     Q_fric = -mu_c*F_cen*r_b*tanh(psi_dot/0.5),  F_cen = M*omega^2*(Rp+s_r),
              s_r = -xi_g*sin(psi) + ar*c*cos(psi)
     Q_stop = -k_s*(psi -+ win) - c_s*psi_dot  outside the +/-win limits,
-             k_s = I_p*wstop^2, c_s = 2*I_p*wstop  (sharp_proj defaults).
+             k_s = I_p*wstop^2, c_s = 2*I_p*wstop  (sharp-vawt-lab defaults).
 
 All signs have been checked against the physical pendulum picture (see
 verify_solver.py structural tests): with the CG ahead of the pivot
@@ -85,7 +85,7 @@ class CPPCParams:
     # mechanical stops
     win_deg: float = 25.0       # pitch limit [deg]
     wstop: float = 50.0         # stop natural frequency [rad/s]
-    # gravity (off by default, matches sharp_proj)
+    # gravity (off by default, matches sharp-vawt-lab)
     g: float = 0.0
     xi_cg_gravity_arm: float = 0.0   # unused unless g != 0
 
@@ -110,7 +110,7 @@ class CPPCParams:
         self.M = self.m_blade + self.m_cw
         self.xi_g = (self.m_blade * self.xi_b
                      + self.m_cw * self.xi_cw) / self.M
-        # polar inertia about the pivot (same structure as sharp_proj)
+        # polar inertia about the pivot (same structure as sharp-vawt-lab)
         self.I_p = (self.m_blade * (self.chord ** 2 / 12.0
                                     + self.xi_b ** 2 + self.ar_len ** 2)
                     + self.m_cw * (self.xi_cw ** 2 + self.ar_len ** 2)

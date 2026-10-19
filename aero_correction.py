@@ -78,7 +78,7 @@ STATIC POLAR
   Viterna-Corrigan extension, and the region beyond 90 deg is obtained from the
   physical reflection ``Cl(180-|a|) = -Cl(|a|)``, ``Cd(180-|a|) = Cd(|a|)``.
 * ``StaticPolar.from_csv(path)`` reads an ``alpha_deg, Cl, Cd[, Cm]`` table
-  (e.g. the Sheldahl-Klimas NACA 0012 data in ``sharp_proj/polars``).
+  (e.g. the Sheldahl-Klimas NACA 0012 data in ``sharp-vawt-lab/polars``).
 
 Everything is SI / radians internally.
 """
@@ -264,18 +264,24 @@ class StaticPolar:
         """
         import glob
         import os
+        import sys
+
         cands = []
         if root:
             cands.append(root)
-        home = os.path.expanduser('~')
-        # sharp_proj moved its tables from polars/ to airfoil_polars/ on
-        # 2026-10-19; accept either layout.
-        cands += [os.path.join(home, 'Documents/sharp_proj/airfoil_polars/naca0012'),
-                  os.path.join(home, 'Documents/sharp_proj/polars/naca0012'),
-                  './airfoil_polars/naca0012',
-                  './polars/naca0012',
-                  os.path.join(home, 'sharp_proj/airfoil_polars/naca0012'),
-                  os.path.join(home, 'sharp_proj/polars/naca0012')]
+        # The reference solver ships these tables (see ref_solver.py).  Looked up
+        # lazily so this module stays usable on its own.
+        try:
+            _here = os.path.dirname(os.path.abspath(__file__))
+            if _here not in sys.path:
+                sys.path.insert(0, _here)
+            import ref_solver
+            _ref = ref_solver.polar_dir()
+        except Exception:                                   # pragma: no cover
+            _ref = None
+        if _ref:
+            cands.append(_ref)
+        cands += ['./airfoil_polars/naca0012', './polars/naca0012']
         tag = f'{re:.0e}'.replace('e+0', 'e+').replace('e-0', 'e-')
         for d in cands:
             for pat in (f'*Re_{tag}.csv', f'*Re_{int(re)}.csv',

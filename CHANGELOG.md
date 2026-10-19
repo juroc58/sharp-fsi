@@ -68,5 +68,9 @@ Initial public release.
   with the aero model.
 - **Upstream path drift**: `sharp-vawt-lab` moved its polar tables from
   `polars/naca0012` to `airfoil_polars/naca0012`. The comparison now accepts
-  either, overrides the root via `SHARP_PROJ`, and **fails loudly** if the tables
-  are missing rather than silently degrading the "real aero" case to a surrogate.
+  either layout and **fails loudly** if the tables are missing rather than
+  silently degrading the "real aero" case to a surrogate.
+- **No machine-specific paths**: the location of the reference solver is resolved
+  by a single new module, `ref_solver.py` (the `SHARP_VAWT_LAB` environment
+  variable, else conventional sibling/child clone locations). Previously three
+  separate modules hard-coded a directory in the author's home folder.

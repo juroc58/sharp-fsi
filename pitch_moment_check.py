@@ -39,9 +39,8 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 from compare_with_bem import (run_fsi, run_bem, geometry, mass_props,
-                              last_rev, binned, wrap_deg, TWO_PI)
+                              last_rev, wrap_deg, TWO_PI)
 from structural_solver import CPPCParams
-from fsi_main import FSICoupler
 from run_validation import CONFIG, aero_config
 
 

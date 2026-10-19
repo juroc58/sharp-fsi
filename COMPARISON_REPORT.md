@@ -1,4 +1,4 @@
-# FSI (2-D DVM + CPPC) vs BEM (`sharp_proj`) — Comparison Report
+# FSI (2-D DVM + CPPC) vs BEM (`sharp-vawt-lab`) — Comparison Report
 
 Status: **current** (supersedes the earlier draft that predated the stall layer,
 the wake-multiresolution scheme and the case-D matched-stall comparison).
@@ -349,6 +349,12 @@ across all populated α bins.
 ## 9. Reproducing this report
 
 ```bash
+# precondition: the reference solver is a separate repository and is not
+# vendored here.  Clone it (a sibling directory called sharp-vawt-lab is found
+# automatically) or point SHARP_VAWT_LAB at an existing clone:
+git clone https://github.com/juroc58/sharp-vawt-lab
+python3 ref_solver.py                           # prints the clone it resolved
+
 python3 verify_solver.py                        > verify_log.txt
 python3 compare_with_bem.py 1.0 4 potential     > compare_log_tsr1.txt
 python3 compare_with_bem.py 1.0 4 stall         > compare_log_tsr1_stall.txt

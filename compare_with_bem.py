@@ -1,8 +1,13 @@
 """
 compare_with_bem.py
 ===================
-Compare the sharpFSI 2-D DVM/FSI suite with the independent BEM solver in
-~/Documents/sharp_proj (vawt_core.py).
+Compare the sharpFSI 2-D DVM/FSI suite with the independent BEM solver
+sharp-vawt-lab (https://github.com/juroc58/sharp-vawt-lab, physics core
+vawt_core.py).
+
+The reference solver is a separate project and is *not* vendored here: this
+script locates a local clone via ref_solver.py (set SHARP_VAWT_LAB to its root,
+or clone it as a sibling directory).
 
 The rotor / structural data are identical in the two codes (R=5 m, c=1 m,
 N=1 blade, ar=0.35, sp=0.25, mb=5 kg with CG at 0.25c, counterweight
@@ -27,7 +32,7 @@ Three/four BEM aerodynamic models are compared:
                             from the unsteady Bernoulli pressure, so this case
                             also tests the unsteady implementation.
   D  matched stall          the SAME static polar the FSI stall layer uses
-                            (StaticPolar.viterna) plus sharp_proj's Noll-Ham
+                            (StaticPolar.viterna) plus sharp-vawt-lab's Noll-Ham
                             dynamic stall, with the time constants translated
                             to the FSI convention (its tau = c/W, ours
                             c/2W, so ds_Tf = T_f/2, ds_Tv = T_v/2), K_v and the
@@ -55,57 +60,47 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-SHARP_PROJ = os.path.expanduser(os.environ.get('SHARP_PROJ',
-                                               '~/Documents/sharp_proj'))
-if SHARP_PROJ not in sys.path:
-    sys.path.insert(0, SHARP_PROJ)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import ref_solver                                                     # noqa: E402
+
+REF_ROOT = ref_solver.find()
+if REF_ROOT is None:
+    raise SystemExit("compare_with_bem.py: " + ref_solver.INSTALL_HINT)
+if REF_ROOT not in sys.path:
+    sys.path.insert(0, REF_ROOT)
 
 from vawt_core import (Geometry, MassProps, AeroConfig, SimConfig,   # noqa: E402
                        PolarDatabase, CycloturbineSim)
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from fsi_main import FSICoupler                                       # noqa: E402
 from run_validation import CONFIG, aero_config                        # noqa: E402
 from aero_correction import StaticPolar                               # noqa: E402
-
-def _polar_dir():
-    """Locate sharp_proj's NACA 0012 polar tables.
-
-    sharp_proj moved them from ``polars/naca0012`` to
-    ``airfoil_polars/naca0012`` (commit of 2026-10-19); accept either so the
-    harness keeps working across versions, but fail loudly rather than letting
-    PolarDatabase fall back to a surrogate (which would silently invalidate the
-    "real aero" case C).
-    """
-    for rel in (('airfoil_polars', 'naca0012'), ('polars', 'naca0012')):
-        d = os.path.join(SHARP_PROJ, *rel)
-        if os.path.isdir(d) and any(f.startswith('polars_naca0012_Re_')
-                                    for f in os.listdir(d)):
-            return d
-    raise SystemExit(
-        f"no NACA 0012 polar tables found under {SHARP_PROJ} "
-        "(looked in airfoil_polars/naca0012 and polars/naca0012); the "
-        "'real aero' case C would otherwise silently use a surrogate polar")
-
 
 POLAR_DIR = None          # resolved lazily, only if case C is requested
 
 
 def _require_polar_dir():
-    """Resolve the NACA 0012 tables, failing loudly if they are missing.
+    """Resolve the reference NACA 0012 tables, failing loudly if missing.
 
-    Called only for the 'real aero' case C, so that importing this module (which
-    `pitch_moment_check.py` and `moment_model_check.py` also do) does not require
-    sharp_proj to be present.
+    Called only for the 'real aero' case C, so that importing this module does
+    not itself require the polar tables to be present.  Fails loudly rather than
+    letting PolarDatabase fall back to a surrogate, which would silently
+    invalidate the comparison.
     """
     global POLAR_DIR
     if POLAR_DIR is None:
-        POLAR_DIR = _polar_dir()
+        POLAR_DIR = ref_solver.polar_dir(REF_ROOT)
+    if POLAR_DIR is None:
+        raise SystemExit(
+            f"no NACA 0012 polar tables under {REF_ROOT} (looked in "
+            "airfoil_polars/naca0012 and polars/naca0012); the 'real aero' "
+            "case C would otherwise silently use a surrogate polar")
     return POLAR_DIR
+
 TWO_PI = 2.0 * np.pi
 
 # The FSI stall layer's time constants are in semi-chords (tau = c/2W);
-# sharp_proj's are in chords (tau = c/W), hence the factor 1/2 when
+# sharp-vawt-lab's are in chords (tau = c/W), hence the factor 1/2 when
 # translating FSI -> BEM.  K_v, the separated moment and the drag model are
 # matched too so that case D compares the SAME aero model on both sides.
 STALL_FSI = dict(stall=True, stall_alpha_stall=14.0, stall_T_a=0.0,
@@ -237,7 +232,7 @@ def main():
     aero = sys.argv[3] if len(sys.argv) > 3 else 'potential'
 
     print("=" * 78)
-    print(f"sharpFSI (2-D DVM + CPPC) vs sharp_proj BEM   "
+    print(f"sharpFSI (2-D DVM + CPPC) vs sharp-vawt-lab BEM   "
           f"TSR = {tsr:.2f}, {n_rev:.0f} revolutions, FSI aero = {aero}")
     print("=" * 78)
 
@@ -415,7 +410,7 @@ def make_plots(tsr, n_rev, T_rev, t, m_f, h_fsi, cases, n, tag='',
     ax.legend(fontsize=8)
     ax.grid(alpha=0.3)
 
-    fig.suptitle(f'sharpFSI (2-D DVM + CPPC) vs sharp_proj BEM   '
+    fig.suptitle(f'sharpFSI (2-D DVM + CPPC) vs sharp-vawt-lab BEM   '
                  f'(TSR={tsr:.2f}, U=10 m/s, H=1 m, last revolution)',
                  fontsize=13)
     fig.tight_layout()

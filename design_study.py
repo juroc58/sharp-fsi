@@ -27,7 +27,6 @@ Outputs: design_tsr_sweep.csv, design_cw_sweep.csv, design_study_tsr.png,
 
 from __future__ import annotations
 
-import os
 import sys
 
 import numpy as np
