@@ -1,0 +1,69 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "sharpFSI: a self-contained 2-D DVM + CPPC fluid-structure-interaction suite for a cycloturbine blade section"
+abstract: >-
+  An independent, dependency-light fluid-structure-interaction solver for a
+  single cycloturbine (variable-pitch vertical-axis wind turbine) blade
+  section. The fluid side is an unsteady 2-D discrete vortex method with a
+  free, multiresolution vortex wake and an unsteady Kutta condition; the
+  structural side is a 1-DOF rocking-pitch model with centrifugal-pendulum
+  pitch control and elastic pitch stops. An optional semi-empirical
+  Beddoes-Leishman-style static/dynamic-stall layer makes the solver usable in
+  the deep-stall regime, and is exactly transparent in attached flow. The suite
+  ships a 54-check verification harness and a head-to-head comparison against
+  the independent BEM solver sharp-vawt-lab, and is intended as a
+  cross-validation artefact for that code rather than as a design tool.
+type: software
+authors:
+  - name: juroc58
+version: 1.0.0
+date-released: "2026-10-19"
+license: MIT
+repository-code: "https://github.com/juroc58/sharp-fsi"
+keywords:
+  - vertical axis wind turbine
+  - VAWT
+  - cycloturbine
+  - fluid-structure interaction
+  - discrete vortex method
+  - vortex lattice method
+  - dynamic stall
+  - passive variable pitch
+  - centrifugal pendulum pitch control
+  - verification and validation
+  - renewable energy
+references:
+  - type: article
+    title: "Low-Speed Aerodynamics"
+    authors:
+      - name: "Katz, J."
+      - name: "Plotkin, A."
+    year: 2001
+    notes: "unsteady Kutta condition, lumped-vortex method, added-mass term"
+  - type: article
+    title: "The unsteady lift of a wing of finite aspect ratio"
+    authors:
+      - name: "Jones, R. T."
+    year: 1940
+    notes: "NACA Report 681; Wagner-function approximation used in check F4"
+  - type: article
+    title: "A semi-empirical model for dynamic stall"
+    authors:
+      - name: "Leishman, J. G."
+      - name: "Beddoes, T. S."
+    year: 1989
+    doi: "10.4050/JAHS.34.3.3"
+  - type: article
+    title: "Wind tunnel tests of a NACA 0012 airfoil at high angles of attack"
+    authors:
+      - name: "Viterna, L. A."
+      - name: "Corrigan, R. D."
+    year: 1982
+    notes: "NASA TM-82862; post-stall polar extension"
+  - type: software
+    title: "sharp-vawt-lab: a 2D BEM solver for the Sharp cycloturbine"
+    authors:
+      - name: juroc58
+    version: "3.2.0"
+    repository-code: "https://github.com/juroc58/sharp-vawt-lab"
+    notes: "the independent BEM solver this suite cross-validates"

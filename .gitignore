@@ -1,0 +1,55 @@
+# ---------------------------------------------------------------------------
+# sharpFSI .gitignore
+#
+# Principle: commit the *source* (the 10 .py modules), the *documentation*
+# (README.md, COMPARISON_REPORT.md), the *cited summary logs* (so every number
+# in the report is traceable without re-running anything) and a curated set of
+# *figures*. Everything else is a large, regenerable by-product of a run, and
+# can be reproduced with the commands in README.md section 1.
+# ---------------------------------------------------------------------------
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+.Python
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+
+# --- generated per-run data (bulk: many MB of vortex/POD histories) ---
+# (the one exception, fsi_history_bem_stall_tsr1p00.txt, is committed because
+#  COMPARISON_REPORT.md section 6 bins it and moment_model_check.py reads it)
+fsi_history_bem_*.txt
+!fsi_history_bem_stall_tsr1p00.txt
+fsi_validation_history*.txt
+bem_history*.txt
+
+# --- figures are generated, so ignore them by default ... ---
+*.png
+
+# --- ... except the ones the documentation embeds (README.md, COMPARISON_REPORT.md) ---
+!verify_solver_plots.png
+!verify_static.png
+!verify_wagner.png
+!verify_convergence.png
+!verify_structural.png
+!verify_stall.png
+!verify_kinematics.png
+!verify_wake_drag.png
+!verify_deadpoint.png
+!verify_vortex_moment.png
+!moment_model_check.png
+!design_study_cw.png
+!design_study_tsr.png
+!comparison_fsi_vs_bem_potential_tsr1p00.png
+!comparison_fsi_vs_bem_stall_tsr1p00.png
+!comparison_fsi_vs_bem_stall_tsr3p00.png
+!comparison_fsi_vs_bem_potential_tsr3p00.png
+
+# --- OS / editor ---
+.DS_Store
+Thumbs.db
+*~

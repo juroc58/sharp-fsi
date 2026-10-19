@@ -1,0 +1,14 @@
+# Runtime dependencies for sharpFSI.
+#
+# Deliberately small: NumPy for the linear algebra, SciPy for the `cdist`
+# distance matrix in the wake-wake induction kernel, Matplotlib for the figures.
+# There is no Numba, no compiled extension and no GPU/BLAS-vendor requirement --
+# the solver is pure NumPy (and runs on a 2013 APU), which is the point: it is
+# meant to be an *independent* check on sharp-vawt-lab, not a re-run of it.
+#
+# The comparison scripts additionally need sharp-vawt-lab
+# (https://github.com/juroc58/sharp-vawt-lab) cloned alongside; see README.md
+# section 1.
+numpy>=1.26
+scipy>=1.11
+matplotlib>=3.8

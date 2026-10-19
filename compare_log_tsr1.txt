@@ -1,0 +1,33 @@
+==============================================================================
+sharpFSI (2-D DVM + CPPC) vs sharp_proj BEM   TSR = 1.00, 4 revolutions, FSI aero = potential
+==============================================================================
+history saved to fsi_history_bem_potential_tsr1p00.txt (2513 rows)
+FSI: 2513 steps, 522 wake vortices, mean coupling iters 2.54, <Cp>=+0.2571
+BEM[quasi   ] 2514 rows, cp=+0.2975, stop=77.0%, aoa_max=179.9 deg, energy resid (abs)=2.02e-04
+BEM[unsteady] 2514 rows, cp=+0.2933, stop=69.9%, aoa_max=179.7 deg, energy resid (abs)=2.53e-04
+BEM[viterna ] 2514 rows, cp=+0.0282, stop=41.2%, aoa_max=84.3 deg, energy resid (abs)=6.38e-03
+BEM[real    ] 2514 rows, cp=+0.0186, stop=33.2%, aoa_max=78.4 deg, energy resid (abs)=4.47e-03
+
+------------------------------------------------------------------------------
+last-revolution statistics (azimuth window = last 3.142 s)
+  FSI (potential)    <psi>=-21.07  psi [-28.41, -1.94]  <a>= -19.01  |a|max= 168.2  stop= 50.4%  <T>=+787.300
+  BEM quasi          <psi>=-25.42  psi [-28.80,-18.32]  <a>= -23.65  |a|max= 179.9  stop= 77.9%  <T>=+903.738
+  BEM unsteady       <psi>=-24.16  psi [-28.84,-10.41]  <a>= -21.85  |a|max= 179.7  stop= 70.9%  <T>=+892.598
+  BEM viterna        <psi>=-11.93  psi [-27.02,+26.08]  <a>=  -8.41  |a|max=  80.2  stop= 42.6%  <T>= +90.390
+  BEM real           <psi>=-13.27  psi [-26.32,+26.26]  <a>= -12.99  |a|max=  77.3  stop= 34.7%  <T>= +60.952
+
+------------------------------------------------------------------------------
+difference vs the FSI (last revolution, pointwise on the common grid)
+  quasi     rms(dpsi)=  8.89 deg  max|dpsi|=  24.79 deg   rms(dalpha)=  8.99 deg  <dT>=+116.438 Nm
+            azimuth-binned rms(dpsi)=  8.88 deg
+  unsteady  rms(dpsi)=  6.83 deg  max|dpsi|=  25.18 deg   rms(dalpha)=  6.95 deg  <dT>=+105.297 Nm
+            azimuth-binned rms(dpsi)=  6.82 deg
+  viterna   rms(dpsi)= 24.08 deg  max|dpsi|=  53.34 deg   rms(dalpha)= 29.39 deg  <dT>=-696.910 Nm
+            azimuth-binned rms(dpsi)= 24.04 deg
+  real      rms(dpsi)= 19.70 deg  max|dpsi|=  54.55 deg   rms(dalpha)= 31.39 deg  <dT>=-726.348 Nm
+            azimuth-binned rms(dpsi)= 19.68 deg
+saved bem_history_matched_potential_tsr1p00.txt
+saved bem_history_unsteady_potential_tsr1p00.txt
+saved bem_history_viterna_potential_tsr1p00.txt
+saved bem_history_real_potential_tsr1p00.txt
+saved comparison_fsi_vs_bem_potential_tsr1p00.png

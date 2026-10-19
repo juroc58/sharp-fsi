@@ -1,0 +1,30 @@
+==============================================================================
+pitch-axis aerodynamic moment: FSI vs BEM   TSR=3.00, aero=stall
+==============================================================================
+derived parameter cross-check (FSI | BEM):
+  M      =   7.500000 |   7.500000   kg
+  xi_g   =   0.116667 |   0.116667   m
+  ar_len =   0.350000 |   0.350000   m
+  Rp     =   4.650000 |   4.650000   m
+  I_p    =   1.641667 |   1.641667   kg m^2
+  psi_eq =   -18.4349 |   -18.4349   deg
+  k_s    =   4104.167   c_b = 0.15   win = 25.0 deg
+history saved to fsi_history_bem_stall_tsr3p00.txt (838 rows)
+
+FSI self-check of the inversion: rms(Q_inv - Q_recorded)=18.0336 N m  on a ptp of 870.0 N m  (2.07 %)
+
+last-revolution aerodynamic pitch moment about the pitch axis:
+  FSI (stall)      Q_aero rms=  42.715  ptp= 159.106  min/max=[  -59.29,  +99.82]  work/cycle=   +2.137 J
+  FSI (inverted)   Q_aero rms=  43.854  ptp= 262.674  min/max=[ -163.00,  +99.67]  work/cycle=   +2.515 J
+  BEM quasi        Q_aero rms= 465.463  ptp= 917.550  min/max=[ -917.22,   +0.33]  work/cycle=  +40.050 J
+  BEM unsteady     Q_aero rms= 464.495  ptp= 937.000  min/max=[ -923.38,  +13.62]  work/cycle=  +51.936 J
+  BEM viterna      Q_aero rms=  68.201  ptp= 649.728  min/max=[ -242.74, +406.99]  work/cycle=  +78.968 J
+  BEM real         Q_aero rms=  58.965  ptp= 584.484  min/max=[ -354.68, +229.81]  work/cycle=  +72.213 J
+
+moment about the pitch axis binned against the effective alpha (last revolution, N m):
+    alpha (deg)   :   -52.5   -37.5   -22.5    -7.5    +7.5   +22.5   +37.5   +52.5
+    FSI           :    +nan  +36.32  +25.77   -8.51  +21.79    +nan    +nan    +nan
+    BEM viterna   :    +nan  +85.92   -2.36  -11.47   -9.21    +nan    +nan    +nan
+    BEM real      :    +nan  +51.69  +29.26  +11.73   +1.54    +nan    +nan    +nan
+
+saved pitch_moment_check_tsr3p00.png

@@ -1,0 +1,34 @@
+==============================================================================
+sharpFSI (2-D DVM + CPPC) vs sharp_proj BEM   TSR = 3.00, 4 revolutions, FSI aero = stall
+==============================================================================
+history saved to fsi_history_bem_stall_tsr3p00.txt (838 rows)
+FSI: 838 steps, 359 wake vortices, mean coupling iters 2.93, <Cp>=-0.2824
+     stall layer: polar='viterna(as=14deg, cd0=0.008, cdmax=2)', T_f=3 T_v=6 K_v=0.5, kappa in [-1.191,+2.468]
+BEM[quasi   ] 838 rows, cp=+1.1990, stop=72.4%, aoa_max=52.0 deg, energy resid (abs)=2.18e-04
+BEM[unsteady] 838 rows, cp=+1.2189, stop=67.9%, aoa_max=52.1 deg, energy resid (abs)=1.35e-04
+BEM[viterna ] 838 rows, cp=-0.2000, stop=27.0%, aoa_max=44.0 deg, energy resid (abs)=1.06e-02
+BEM[real    ] 838 rows, cp=-0.2434, stop=20.9%, aoa_max=41.4 deg, energy resid (abs)=5.50e-03
+
+------------------------------------------------------------------------------
+last-revolution statistics (azimuth window = last 1.047 s)
+  FSI (stall)        <psi>=-16.40  psi [-25.65, -5.12]  <a>= -15.07  |a|max=  35.4  stop= 10.5%  <T>=-288.285
+  BEM quasi          <psi>=-26.70  psi [-35.71,-13.33]  <a>= -24.93  |a|max=  52.0  stop= 71.0%  <T>=+1222.805
+  BEM unsteady       <psi>=-26.32  psi [-35.78,-14.95]  <a>= -24.56  |a|max=  52.1  stop= 64.8%  <T>=+1243.278
+  BEM viterna        <psi>=-15.64  psi [-27.92, +6.95]  <a>= -14.58  |a|max=  44.0  stop= 25.7%  <T>=-189.520
+  BEM real           <psi>=-14.29  psi [-27.70, +6.08]  <a>= -13.32  |a|max=  41.4  stop= 20.5%  <T>=-274.766
+
+------------------------------------------------------------------------------
+difference vs the FSI (last revolution, pointwise on the common grid)
+  quasi     rms(dpsi)= 14.80 deg  max|dpsi|=  30.56 deg   rms(dalpha)= 14.11 deg  <dT>=+1511.090 Nm
+            azimuth-binned rms(dpsi)= 14.80 deg
+  unsteady  rms(dpsi)= 14.18 deg  max|dpsi|=  30.63 deg   rms(dalpha)= 13.52 deg  <dT>=+1531.563 Nm
+            azimuth-binned rms(dpsi)= 14.19 deg
+  viterna   rms(dpsi)= 12.74 deg  max|dpsi|=  26.86 deg   rms(dalpha)= 11.90 deg  <dT>=+98.765 Nm
+            azimuth-binned rms(dpsi)= 12.82 deg
+  real      rms(dpsi)= 12.29 deg  max|dpsi|=  23.09 deg   rms(dalpha)= 12.05 deg  <dT>=+13.519 Nm
+            azimuth-binned rms(dpsi)= 12.38 deg
+saved bem_history_matched_stall_tsr3p00.txt
+saved bem_history_unsteady_stall_tsr3p00.txt
+saved bem_history_viterna_stall_tsr3p00.txt
+saved bem_history_real_stall_tsr3p00.txt
+saved comparison_fsi_vs_bem_stall_tsr3p00.png

@@ -1,0 +1,54 @@
+==================================================================
+2D VAWT FSI validation run
+==================================================================
+  chord        = 1.0
+  R            = 5.0
+  omega        = 6.0
+  U_inf        = 10.0
+  dt           = 0.005
+  n_panels     = 32
+  wake_cap     = 600
+  m_blade      = 5.0
+  m_cw         = 2.5
+  r_cw         = 0.35
+  win_deg      = 25.0
+  TSR          = 3.00
+  aero model   = stall
+  psi_eq       = -18.43 deg
+  fn_ratio     = 2.73
+  I_p          = 1.6417 kg m^2
+------------------------------------------------------------------
+FSI run: 4.0 revolutions, 838 steps
+  dt=0.005s  T_rev=1.047s  TSR=3.00  induction=0.00
+  psi_eq=-18.43 deg  fn_ratio=2.73
+  stall correction ON: polar='viterna(as=14deg, cd0=0.008, cdmax=2)'  T_f=3 T_v=6 K_v=0.7
+    0.0%  t=  0.01s  phi=    1.7  alpha= 22.43  psi=  4.73  Cl= 3.314  wake=1
+    9.9%  t=  0.42s  phi=  144.4  alpha=-25.26  psi=-13.64  Cl=-1.596  wake=84
+   19.8%  t=  0.84s  phi=  287.1  alpha=-15.10  psi=-25.03  Cl=-1.935  wake=143
+   29.7%  t=  1.25s  phi=   69.7  alpha= -3.77  psi= -9.75  Cl=-0.679  wake=185
+   39.6%  t=  1.66s  phi=  212.4  alpha=-34.23  psi=-17.66  Cl=-1.792  wake=226
+   49.5%  t=  2.08s  phi=  355.1  alpha= -0.48  psi=-20.88  Cl=-1.840  wake=254
+   59.4%  t=  2.49s  phi=  137.7  alpha=-29.78  psi=-19.08  Cl=-1.384  wake=274
+   69.3%  t=  2.91s  phi=  280.4  alpha=-12.17  psi=-18.38  Cl=-2.054  wake=295
+   79.2%  t=  3.32s  phi=   63.1  alpha= -2.71  psi=-10.31  Cl=-0.590  wake=315
+   89.1%  t=  3.74s  phi=  205.7  alpha=-32.35  psi=-15.26  Cl=-1.811  wake=337
+   99.0%  t=  4.15s  phi=  348.4  alpha= -2.69  psi=-23.68  Cl=-1.419  wake=357
+  done: 838 steps in 6.0s (7.21 ms/step, mean coupling iters 2.93)
+history saved to fsi_validation_history_tsr3p00_stall.txt (838 rows)
+
+------------------------------------------------------------------
+last-revolution summary
+  <psi>       =  -16.76 deg   range [ -25.06,   -3.12]
+  <alpha>     =  -15.44 deg   range [ -38.10,   +1.35]
+  <Cl>        =  -1.418   range [ -2.900,  +1.913]
+  <Cd>        = +0.1267
+  <Cm>        = +0.1203
+  <kappa>     = +0.6857   range [-2.2890, +3.3393]
+  <Q_aero>    = +13.272 N m   <Q_cent> = -13.438 N m
+  stop time   = 8.8 %
+  <Q_rotor>   = -311.721 N m/span   <Cp> = -0.3054
+  aero regime (last rev): |alpha|>15 deg for 49.0 % of steps (handled by the stall correction), |W|<2 m/s for 0.0 %
+  wake vortices at end = 359 (merges 479)
+  Kelvin budget = -3.73e-13
+saved fsi_validation_plots_tsr3p00_stall.png
+saved fsi_time_history_tsr3p00_stall.png

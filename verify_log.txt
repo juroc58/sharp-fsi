@@ -1,0 +1,121 @@
+======================================================================
+sharpFSI verification suite
+======================================================================
+
+F1-F3: static flat-plate polar
+  [PASS] F1 Cl = 2 pi sin(alpha)  max|dCl|=0.0173 (0.80% of max)
+  [PASS] F2 potential drag small & ~C*Cl^2 (see F17: C ~ 1/L_wake)  max|Cd|=0.01159, Cd=2.55e-03*Cl^2 (fit err 4.6e-06)
+  [PASS] F3 Cm(pivot=0.25c) ~ 0  max|Cm|=0.00347
+  pivot-shift moment law  Cm = Cl*(sp-0.25):
+  [PASS] F3 Cm(sp=0.15)  Cm=-0.0636 expected=-0.0651 (Cl=0.6511)
+  [PASS] F3 Cm(sp=0.4)  Cm=+0.0983 expected=+0.0977 (Cl=0.6511)
+
+F4: Wagner impulsive-start response
+  [PASS] F4 Wagner history matches Jones (tau>0.5)  RMS|dCl|/Cl_ss=0.0054
+  [PASS] F4 Cl -> Cl_ss as tau -> 40  Cl(tau=40)=0.5447 Cl_ss=0.5476 (Jones predicts 0.5452)
+  [PASS] F4 added-mass impulse matches rho(pi c^2/4) dW_n  first-step impulse=0.9561 N s vs ref 0.8385 N s (ratio 1.14); first-step Cl=+3.122 > 0
+
+F5: panel / timestep convergence (static, alpha=10 deg)
+    N= 16 dt=0.0200  Cl=1.07940  err=1.069%
+    N= 16 dt=0.0100  Cl=1.08105  err=0.918%
+    N= 16 dt=0.0050  Cl=1.08175  err=0.854%
+    N= 32 dt=0.0200  Cl=1.08426  err=0.624%
+    N= 32 dt=0.0100  Cl=1.08592  err=0.472%
+    N= 32 dt=0.0050  Cl=1.08663  err=0.407%
+    N= 64 dt=0.0200  Cl=1.08647  err=0.421%
+    N= 64 dt=0.0100  Cl=1.08813  err=0.269%
+    N= 64 dt=0.0050  Cl=1.08885  err=0.203%
+  [PASS] F5 convergence (all < 3%)  max err=1.069%
+
+F6/F7: structural model
+  [PASS] F6 oscillates about psi_eq  centre=-13.274 deg vs psi_eq=-13.392 deg
+  [PASS] F6 frequency matches sqrt(M w^2 Rp ar c / Ip)  omega=5.526 vs 5.433 rad/s (+1.7%)
+  [PASS] F7 +Q_aero increases psi  dpsi=+0.0173 deg
+  [PASS] F7 elastic stops: psi = -(win + Q/ks)  psi=-25.55 deg, model -25.69 deg
+
+F8/F9: coupled FSI sanity run (0.4 rev, coarse)
+  [PASS] F8 finite, no blow-up  |Cl|max=6.828
+  [PASS] F8 wake bounded  wake=93, merges=33
+  [PASS] F8 Kelvin budget ~ 0  sum(Gamma)=-2.13e-14
+  [PASS] F8 stops bounded (elastic stop travel)  max|psi|=28.36 deg, win=25.0, elastic overshoot Q/k_s=4.20 deg
+  [PASS] F8 one vortex shed per step  nw+merges=126 steps=126
+  [PASS] F9 unsteady term vanishes at steady state  |Cl_unsteady-on - Cl_off|=9.08e-04
+
+F10: kinematics cross-check against sharp_proj
+  [PASS] F10 kinematics match sharp_proj kernel (alpha)  max|dalpha|=3.98e-12 deg over 3142 azimuths
+  [PASS] F10 blade reference radius = R at zero pitch  |X_ref|=5.000000000 m, R=5.0 m
+
+F11: stall correction is transparent while attached
+  [PASS] F11 kappa == 1 in attached flow  kappa in [1.000000000000, 1.000000000000]
+  [PASS] F11 corrected Cl, Cm identical to pure potential flow  max|dCl|=4.44e-16  max|dCm|=0.00e+00
+
+F12: corrected loads recover the prescribed static polar
+  [PASS] F12 Cl matches the polar in the stalled range  max|dCl|=0.0038
+  [PASS] F12 Cd matches the polar in the stalled range  max|dCd|=0.0070
+        alpha= 16.0  Cl=+1.4358 (polar +1.4349)  Cd=0.0591 (polar 0.0558)  kappa=+0.8285
+        alpha= 20.0  Cl=+1.3408 (polar +1.3398)  Cd=0.1438 (polar 0.1400)  kappa=+0.6234
+        alpha= 30.0  Cl=+1.2726 (polar +1.2710)  Cd=0.4187 (polar 0.4134)  kappa=+0.4046
+        alpha= 45.0  Cl=+1.1938 (polar +1.1909)  Cd=0.9363 (polar 0.9293)  kappa=+0.2680
+        alpha= 60.0  Cl=+0.9477 (polar +0.9440)  Cd=1.4568 (polar 1.4500)  kappa=+0.1735
+
+F13: deep-stall limits
+  [PASS] F13 Cl(90 deg) ~ 0  Cl=+0.0000
+  [PASS] F13 Cd(90 deg) ~ 2 (broadside flat plate)  Cd=2.0000
+  [PASS] F13 reversed flow: Cl(170 deg) matches the reflected polar  Cl=-1.0911 (polar -1.0911)
+  [PASS] F13 separated moment is nose-down for alpha > 0  Cm(90 deg)=-0.4950
+
+F14: dynamic-stall hysteresis (pitch ramp through stall)
+        overshoot above the static polar: +0.3486
+        (static polar max Cl = 1.5200)
+  [PASS] F14 lift overshoot in the dynamic-stall ramp  max overshoot=+0.3486
+  [PASS] F14 hysteresis loop is non-degenerate  loop integral=+0.06690 (deg*Cl)
+  [PASS] F14 no overshoot in attached flow (|alpha|<10 deg)  +2.05e-09
+
+F15: coupled FSI run with the stall correction
+  [PASS] F15 coupled stall run is finite  314 steps, max|psi|=26.5 deg
+  [PASS] F15 lift is stall-limited where the wind is live  max|Cl|=1.755 = +15% vs static Clmax=1.520 (dynamic-stall overshoot, model clamp 1.6*Clmax=2.43)
+  [PASS] F15 kappa < 1 in the stalled part of the cycle  kappa in [0.364, 0.820] for |alpha|>20 deg
+  [PASS] F15 stall correction is active in the cycle  16.5% of live steps with |Cl|>1.4
+
+F16: multiresolution (age-decimated) wake thinning
+  [PASS] F16 age: circulation/moment conservation  dGamma=3.1e-15 dMx=7.1e-14 dMy=1.1e-16
+  [PASS] F16 age: wake stays sorted by level  levels=[120, 120, 120, 120, 120, 0, 0]
+  [PASS] F16 age: one block per level, memory bound respected  nw=600 <= cap=600, n_per_level=120
+  [PASS] F16 age: effective wake memory = n_per_level*(2^L-1)  3720 shed vortices represented by 600
+  [PASS] F16 oldest: circulation/moment conservation  dGamma=2.4e-15 dMx=2.9e-13 dMy=1.1e-16
+  [PASS] F16 near-blade induced velocity preserved by age decimation  max|du|/|u|max = 1.83e-03 (oldest-pair scheme: 3.77e-03)
+
+F17: residual potential drag scales with the wake length, not N
+    panel refinement (wake = 50c):
+      N= 16  Cd=2.2692e-03  Cd/Cl^2=1.942e-03
+      N= 32  Cd=2.2937e-03  Cd/Cl^2=1.945e-03
+      N= 64  Cd=2.3047e-03  Cd/Cl^2=1.946e-03
+      N=128  Cd=2.3167e-03  Cd/Cl^2=1.948e-03
+  [PASS] F17 drag is invariant under panel refinement  spread = 2.07% over N = (16, 32, 64, 128) (not a lattice artefact)
+    wake-length refinement (N = 32, 0.1c shed per step):
+      L=  25.0c  Cd=4.9786e-03  Cd*L=1.2446e-01
+      L=  50.0c  Cd=2.3524e-03  Cd*L=1.1762e-01
+      L= 100.0c  Cd=1.1316e-03  Cd*L=1.1316e-01
+  [PASS] F17 drag falls as 1/wake-length (finite-wake effect)  log-log slope = -1.07 (-1 expected), Cd*L/mean = 0.96-1.05
+
+F18: reported coefficients bounded at the zero-wind dead point
+  [PASS] F18 the floor leaves the loads bit-identical  max|dF|=0.0e+00, max|dMz|=0.0e+00 over the sweep
+      at |W| = 0.10 m/s:  Cl(false q) = +0.017   Cl(true q) = +6.814   ratio = 400
+  [PASS] F18 the floor caps the dead-point blow-up at (W_ref/W)^2  Cl(true q)/Cl(false q) = 400 at |W|=0.10 (expected 400)
+  [PASS] F18 floored coefficients stay bounded where the true ones diverge  max|Cl|_floored=2.523 (bounded, the physical range); the pointwise true/floored ratio reaches 400
+  [PASS] F18 coeff_valid flags exactly the floored samples  valid at |W|=10: True, at |W|=0.1: False
+
+F19: leading-edge-vortex pitching moment
+  [PASS] F19 vortex moment vanishes in the steady state  Cm_vx=+7.92e-16
+  [PASS] F19 steady Cm still equals the polar  Cm=-0.084329 vs polar -0.084329
+      vortex contribution: min -0.0261 at alpha=23.0 deg, max +0.0002
+  [PASS] F19 vortex gives a nose-down moment break in the stall transient  min(Cm_vortex)=-0.0261 at alpha=23.0 deg
+  [PASS] F19 vortex moment is negligible while attached  max|Cm_vortex|(|alpha|<12)=2.72e-12
+  [PASS] F19 vortex convects over the chord and is re-born at the LE  xv in [0.050, 1.000]
+  [PASS] F19 vortex moment is continuous (no jump at re-birth)  max|dCm_vortex|=3.17e-04
+
+======================================================================
+RESULT: 54/54 checks passed
+plots: verify_solver_plots.png, verify_static.png, verify_wagner.png,
+       verify_convergence.png, verify_structural.png, verify_stall.png, verify_kinematics.png
+======================================================================
