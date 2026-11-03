@@ -286,6 +286,9 @@ class FSICoupler:
         self._set_fluid_kinematics(phi, psi_new, psd_new)
         self.fluid.wind = wind
         self.fluid.solve()
+        # Refresh the shed-vortex release position with the accepted pitch
+        # (M1: removes O(dt) placement lag from frozen start-of-step release).
+        self.fluid.refresh_release(wind)
         loads = self.fluid.loads()
         Mz_piv = self._moment_about_pivot(loads)
         Q_aero = -Mz_piv

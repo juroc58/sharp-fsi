@@ -32,3 +32,15 @@ _CHECK_FUNCS = [
 def test_check(check_name, check_fn, marker):
     """Run a single F-check and assert it passes."""
     assert check_fn(), f"Check {check_name} failed"
+
+def test_bem_kinematics_skips_without_reference(monkeypatch):
+    """F10 skips gracefully when sharp-vawt-lab is not importable."""
+    import verify_solver
+
+    monkeypatch.setattr(verify_solver.ref_solver, 'find', lambda: None)
+
+    import sys
+    sys.path = [p for p in sys.path if 'sharp-vawt-lab' not in p and 'sharp_proj' not in p]
+
+    result = verify_solver.test_bem_kinematics()
+    assert result is None, f'Expected None (skip), got {result}'

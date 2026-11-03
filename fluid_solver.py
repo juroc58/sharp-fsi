@@ -352,6 +352,20 @@ class DVMFluidSolver:
             + self._wake_vel_at_many(self.Xte[None, :])[0]
         self.x_new = self.Xte + self.shed_factor * self.dt * v_te
 
+    def refresh_release(self, wind):
+        """Refresh the shed-vortex release position with updated kinematics.
+
+        Call this after the coupling loop has converged on the final pitch
+        angle, so that the shed vortex is released at the position consistent
+        with the accepted blade pose rather than the initial guess.  Does not
+        reset the stall-model state (unlike begin_step), so the dynamic-stall
+        state is advanced exactly once per step.
+        """
+        self.wind = np.asarray(wind, dtype=float)
+        v_te = self.wind + self._bound_vel_at_many(self.Xte[None, :])[0] \
+            + self._wake_vel_at_many(self.Xte[None, :])[0]
+        self.x_new = self.Xte + self.shed_factor * self.dt * v_te
+
     def solve(self):
         """Solve the (N+1) bound/shed vortex system -> self.gamma_b, gamma_shed.
 

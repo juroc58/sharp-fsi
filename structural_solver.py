@@ -83,6 +83,7 @@ class CPPCParams:
     c_b: float = 0.15           # viscous pivot damping [N m s/rad]
     mu_c: float = 0.0           # Coulomb friction coefficient (x F_cen*r_b)
     r_bearing: float = 0.002
+    tau_fric_s: float = 0.5     # friction smoothing constant [rad/s]
     # mechanical stops
     win_deg: float = 25.0       # pitch limit [deg]
     wstop: float = 50.0         # stop natural frequency [rad/s]
@@ -162,7 +163,7 @@ class CPPCStructural:
         if self.p.mu_c == 0.0:
             return 0.0
         F_cen = self.p.M * self.p.omega ** 2 * (self.p.Rp + self.s_r(psi))
-        return -self.p.mu_c * F_cen * self.p.r_bearing * np.tanh(psi_dot / 0.5)
+        return -self.p.mu_c * F_cen * self.p.r_bearing * np.tanh(psi_dot / self.p.tau_fric_s)
 
     def Q_stop(self, psi, psi_dot):
         win = self.p.win
