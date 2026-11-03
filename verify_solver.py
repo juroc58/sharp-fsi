@@ -936,6 +936,892 @@ def main():
     return n_pass == len(RESULTS)
 
 
+# ============================================================================
+# Check functions for pytest parametrization (one per note() call in main())
+# ============================================================================
+
+def check_f1():
+    """F1: Static polar Cl = 2*pi*sin(alpha)"""
+    alphas = np.arange(-20.0, 20.1, 4.0)
+    cl_s = []
+    for a in alphas:
+        cl, _, _, _ = static_run(a)
+        cl_s.append(cl)
+    cl_s = np.array(cl_s)
+    cl_exact = 2 * np.pi * np.sin(np.deg2rad(alphas))
+    return bool(np.abs(cl_s - cl_exact).max() < 0.03)
+
+
+def check_f2():
+    """F2: Potential-flow drag Cd ~ K*Cl^2"""
+    alphas = np.arange(-20.0, 20.1, 4.0)
+    cl_s, cd_s = [], []
+    for a in alphas:
+        cl, cd, _, _ = static_run(a)
+        cl_s.append(cl); cd_s.append(cd)
+    cl_s, cd_s = np.array(cl_s), np.array(cd_s)
+    k_drag = float(np.sum(cd_s * cl_s ** 2) / np.sum(cl_s ** 4))
+    fit_err = np.abs(cd_s - k_drag * cl_s ** 2).max()
+    return bool(np.abs(cd_s).max() < 0.02 and fit_err < 3e-4)
+
+
+def check_f3():
+    """F3: Quarter-chord moment Cm ~ 0"""
+    alphas = np.arange(-20.0, 20.1, 4.0)
+    cm_s = []
+    for a in alphas:
+        _, _, cm, _ = static_run(a)
+        cm_s.append(cm)
+    cm_s = np.array(cm_s)
+    return bool(np.abs(cm_s).max() < 0.01)
+
+
+def check_f3_sp_015():
+    """F3: Pivot-shift moment law Cm = Cl*(sp-0.25) at sp=0.15"""
+    cl, _, cm, _ = static_run(6.0, sp=0.15)
+    expect = cl * (0.15 - 0.25)
+    return bool(abs(cm - expect) < 0.02)
+
+
+def check_f3_sp_040():
+    """F3: Pivot-shift moment law Cm = Cl*(sp-0.25) at sp=0.40"""
+    cl, _, cm, _ = static_run(6.0, sp=0.40)
+    expect = cl * (0.40 - 0.25)
+    return bool(abs(cm - expect) < 0.02)
+
+
+def check_f4_wagner():
+    """F4: Wagner history matches Jones (tau>0.5)"""
+    dt = 0.005
+    t, cl, cl_ss, W, c = impulsive_start(5.0, dt=dt, n_steps=800)
+    tau = 2 * W * t / c
+    jones = 1.0 - 0.165 * np.exp(-0.0455 * tau) - 0.335 * np.exp(-0.3 * tau)
+    cl_j = cl_ss * jones
+    m = tau >= 0.5
+    rms = float(np.sqrt(np.mean((cl[m] - cl_j[m]) ** 2)) / cl_ss)
+    return bool(rms < 0.05)
+
+
+def check_f4_steady():
+    """F4: Cl -> Cl_ss as tau -> 40"""
+    dt = 0.005
+    t, cl, cl_ss, W, c = impulsive_start(5.0, dt=dt, n_steps=800)
+    return bool(abs(cl[-1] - cl_ss) < 0.05 * cl_ss)
+
+
+def check_f4_added_mass():
+    """F4: Added-mass impulse matches rho(pi c^2/4) dW_n"""
+    dt = 0.005
+    t, cl, cl_ss, W, c = impulsive_start(5.0, dt=dt, n_steps=800)
+    impulse = float(cl[0] * dt * (0.5 * 1.225 * W ** 2 * c))
+    impulse_ref = 1.225 * (np.pi * c ** 2 / 4.0) * (W * np.sin(np.deg2rad(5.0)))
+    return bool(0.6 < impulse / impulse_ref < 1.6 and cl[0] > 0)
+
+
+def check_f5():
+    """F5: Panel/timestep convergence (all < 3%)"""
+    ex = 2 * np.pi * np.sin(np.deg2rad(10.0))
+    errs = []
+    for N in (16, 32, 64):
+        for dt in (0.02, 0.01, 0.005):
+            cl, _, _, _ = static_run(10.0, n_panels=N, dt=dt,
+                                     n_steps=int(5.0 / dt), wake_cap=600)
+            errs.append(100 * abs(cl - ex) / ex)
+    return bool(max(errs) < 3.0)
+
+
+def check_f6_centre():
+    """F6: Oscillates about psi_eq"""
+    p = CPPCParams()
+    s = CPPCStructural(p)
+    s.reset(0.0, 0.0)
+    dt = 1e-4
+    n = int(8.0 / dt)
+    hist = np.zeros(n)
+    for i in range(n):
+        s.step(0.0, dt)
+        hist[i] = s.psi
+    ctr = float(hist.mean())
+    return bool(abs(ctr - p.psi_eq) < np.deg2rad(1.0))
+
+
+def check_f6_freq():
+    """F6: Frequency matches sqrt(M w^2 Rp ar c / Ip)"""
+    p = CPPCParams()
+    s = CPPCStructural(p)
+    s.reset(0.0, 0.0)
+    dt = 1e-4
+    n = int(8.0 / dt)
+    hist = np.zeros(n)
+    for i in range(n):
+        s.step(0.0, dt)
+        hist[i] = s.psi
+    x = hist - float(hist.mean())
+    zc = np.where(np.diff(np.sign(x)))[0]
+    per = 2 * np.mean(np.diff(zc)) * dt if len(zc) > 2 else np.nan
+    om = 2 * np.pi / per
+    return bool(abs(om - p.omega_n) / p.omega_n < 0.10)
+
+
+def check_f7_increases_psi():
+    """F7: Positive aero moment increases psi"""
+    p = CPPCParams()
+    s = CPPCStructural(p)
+    s.reset(p.psi_eq, 0.0)
+    s.step(+10.0, 0.01, n_sub=10)
+    return bool(s.psi > p.psi_eq)
+
+
+def check_f7_stops():
+    """F7: Elastic stops psi = -(win + Q/ks)"""
+    p = CPPCParams()
+    s = CPPCStructural(p)
+    s.reset(0.0, 0.0)
+    Q = 50.0
+    for _ in range(20000):
+        s.step(-Q, 5e-4)
+    deflect = Q / p.k_s
+    return bool(abs(abs(s.psi) - (p.win + deflect)) < np.deg2rad(1.0))
+
+
+def check_f8_finite():
+    """F8: Finite, no blow-up"""
+    fsi = FSICoupler(dt=0.01, n_panels=24, wake_cap=300, omega=2.0,
+                     n_coupling_iter=3)
+    h = fsi.run(n_revolutions=0.4, verbose=False)
+    return bool(np.all(np.isfinite(h['Cl'])) and np.all(np.isfinite(h['psi'])))
+
+
+def check_f8_wake_bounded():
+    """F8: Wake bounded"""
+    fsi = FSICoupler(dt=0.01, n_panels=24, wake_cap=300, omega=2.0,
+                     n_coupling_iter=3)
+    h = fsi.run(n_revolutions=0.4, verbose=False)
+    return bool(fsi.fluid.nw <= fsi.fluid.wake_cap)
+
+
+def check_f8_kelvin():
+    """F8: Kelvin budget ~ 0"""
+    fsi = FSICoupler(dt=0.01, n_panels=24, wake_cap=300, omega=2.0,
+                     n_coupling_iter=3)
+    h = fsi.run(n_revolutions=0.4, verbose=False)
+    budget = fsi.fluid.circulation_budget()
+    return bool(abs(budget) < 1e-6)
+
+
+def check_f8_stops_bounded():
+    """F8: Stops bounded"""
+    fsi = FSICoupler(dt=0.01, n_panels=24, wake_cap=300, omega=2.0,
+                     n_coupling_iter=3)
+    h = fsi.run(n_revolutions=0.4, verbose=False)
+    osk = np.max(np.abs(h['Q_aero'])) / fsi.struct.p.k_s
+    psi_max = np.abs(h['psi']).max()
+    return bool(psi_max < fsi.struct.p.win + osk + np.deg2rad(1.0))
+
+
+def check_f8_one_vortex_per_step():
+    """F8: One vortex shed per step"""
+    fsi = FSICoupler(dt=0.01, n_panels=24, wake_cap=300, omega=2.0,
+                     n_coupling_iter=3)
+    h = fsi.run(n_revolutions=0.4, verbose=False)
+    return bool(fsi.fluid.nw + fsi.fluid.merge_count == fsi.step_count)
+
+
+def check_f9():
+    """F9: Unsteady term vanishes at steady state"""
+    cl_u, _, _, s_u = static_run(8.0, n_steps=300, average_last=40)
+    s_u.unsteady_force = False
+    load = s_u.loads()
+    return bool(abs(cl_u - load['Cl']) < 1e-3)
+
+
+def check_f10_alpha():
+    """F10: Kinematics match sharp-vawt-lab kernel (alpha)"""
+    root = ref_solver.find()
+    if root is None:
+        return True  # skipped if reference not available
+    if root not in sys.path:
+        sys.path.insert(0, root)
+    from vawt_core import (Geometry, MassProps, AeroConfig, SimConfig,
+                           PolarDatabase, CycloturbineSim)
+    R, c, ar, sp, U, tsr, psi0 = 5.0, 1.0, 0.35, 0.25, 10.0, 1.0, 5.0
+    omega = tsr * U / R
+    g = Geometry(R=R, c=c, H=1.0, N=1, ar=ar, sp=sp)
+    ms = MassProps(mb=5.0, xbcg=0.25, mc=2.5, dcw=-0.60)
+    _pdir = ref_solver.polar_dir(root) or ''
+    ae = AeroConfig(polar_dir=_pdir, use_dynamic_stall=False, use_tip_loss=False,
+                    use_dmst=False, use_dynamic_inflow=False,
+                    use_flow_curvature=False, cd_add=0.0, win_deg=25.0,
+                    wstop=50.0, cb=0.15, kc=0.0, mu_c=0.0, r_bearing=0.0,
+                    a_fix=0.0, prescribe_pitch=True, pp0_deg=psi0)
+    pdb = PolarDatabase.from_callable(
+        lambda a: (2.0 * np.pi * np.sin(a), np.zeros_like(a)),
+        cla=2.0 * np.pi, geo=g)
+    sim_cfg = SimConfig(U=U, tsr=tsr, free=False, psi0_deg=psi0, dt=1e-3,
+                        T_max=2 * np.pi / omega, stride=1, rho=1.225,
+                        n_rev_fixed=1)
+    out = CycloturbineSim(g, ms, ae, sim_cfg, polar_db=pdb).run()['out']
+    phi_b, alpha_b = out[:, 1], out[:, 5]
+    fsi = FSICoupler(chord=c, sp=sp, ar=ar, R=R, omega=omega, U_inf=U,
+                     m_blade=5.0, cg_blade=0.25, m_cw=2.5, r_cw=0.35)
+    psi = np.deg2rad(psi0)
+    al = []
+    for p in phi_b:
+        x_ref, v_ref, beta, _ = fsi._blade_reference(p, psi, 0.0)
+        Wg = fsi._wind() - v_ref
+        n_hat = np.array([np.cos(beta), np.sin(beta)])
+        xi_hat = np.array([np.sin(beta), -np.cos(beta)])
+        al.append(np.arctan2(Wg @ n_hat, Wg @ xi_hat))
+    al = np.degrees(np.array(al))
+    dalpha = np.abs((al - np.degrees(alpha_b) + 180.0) % 360.0 - 180.0)
+    return bool(dalpha.max() < 1e-6)
+
+
+def check_f10_radius():
+    """F10: Blade reference radius = R at zero pitch"""
+    fsi = FSICoupler(chord=1.0, sp=0.25, ar=0.35, R=5.0, omega=2.0,
+                     U_inf=10.0, m_blade=5.0, cg_blade=0.25, m_cw=2.5,
+                     r_cw=0.35)
+    x0 = fsi._blade_reference(0.0, 0.0, 0.0)[0]
+    return bool(abs(np.hypot(*x0) - 5.0) < 1e-12)
+
+
+def check_f11_kappa():
+    """F11: kappa == 1 in attached flow"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    kmin, kmax = 1.0, 1.0
+    for a0 in (2.0, 4.0, 8.0, 12.0):
+        cl0, _, _, _ = static_run(a0, n_panels=48, n_steps=700,
+                                  wake_cap=800, average_last=100)
+        cl1, _, _, km, _ = _stall_static(polar, a0)
+        kmin, kmax = min(kmin, km), max(kmax, km)
+    return bool(max(abs(kmin - 1), abs(kmax - 1)) < 1e-9)
+
+
+def check_f11_identical():
+    """F11: Corrected Cl, Cm identical to pure potential flow"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    dcl = dcm = 0.0
+    for a0 in (2.0, 4.0, 8.0, 12.0):
+        cl0, _, cm0, _ = static_run(a0, n_panels=48, n_steps=700,
+                                    wake_cap=800, average_last=100)
+        cl1, _, cm1, _, _ = _stall_static(polar, a0)
+        dcl = max(dcl, abs(cl1 - cl0))
+        dcm = max(dcm, abs(cm1 - cm0))
+    return bool(max(dcl, dcm) < 1e-9)
+
+
+def check_f12_cl():
+    """F12: Cl matches polar in stalled range"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    dcl = 0.0
+    for a0 in (16.0, 20.0, 30.0, 45.0, 60.0):
+        cl, _, _, _, _ = _stall_static(polar, a0)
+        clp, _, _ = polar.eval(np.deg2rad(a0))
+        dcl = max(dcl, abs(cl - clp))
+    return bool(dcl < 0.05)
+
+
+def check_f12_cd():
+    """F12: Cd matches polar in stalled range"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    dcd = 0.0
+    for a0 in (16.0, 20.0, 30.0, 45.0, 60.0):
+        _, cd, _, _, _ = _stall_static(polar, a0)
+        _, cdp, _ = polar.eval(np.deg2rad(a0))
+        dcd = max(dcd, abs(cd - cdp))
+    return bool(dcd < 0.05)
+
+
+def check_f13_cl90():
+    """F13: Cl(90 deg) ~ 0"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    cl, _, _, _, _ = _stall_static(polar, 90.0, n_steps=900)
+    return bool(abs(cl) < 0.2)
+
+
+def check_f13_cd90():
+    """F13: Cd(90 deg) ~ 2"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    _, cd, _, _, _ = _stall_static(polar, 90.0, n_steps=900)
+    return bool(abs(cd - 2.0) < 0.25)
+
+
+def check_f13_cl170():
+    """F13: Cl(170 deg) matches reflected polar"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    cl2, _, _, _, _ = _stall_static(polar, 170.0, n_steps=900)
+    clp, _, _ = polar.eval(np.deg2rad(170.0))
+    return bool(abs(cl2 - clp) < 0.06)
+
+
+def check_f13_cm90():
+    """F13: Separated moment nose-down for alpha > 0"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    cl, _, cm, _, _ = _stall_static(polar, 90.0, n_steps=900)
+    return bool(cm < -0.02)
+
+
+def check_f14_overshoot():
+    """F14: Lift overshoot in dynamic-stall ramp"""
+    from aero_correction import StallModel, StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    sm = StallModel(polar, T_f=3.0, T_v=6.0, K_v=0.7)
+    n, dt, W = 900, 2.0e-3, 10.0
+    al = np.zeros(n)
+    cl = np.zeros(n)
+    for i in range(n):
+        a0 = 0.0 + 35.0 * i / (n - 1)
+        al[i] = a0
+        sm.begin_step()
+        sm.update(np.deg2rad(a0), W, dt)
+        cl[i] = sm.Cl_ds
+    cl_static = polar.eval(np.deg2rad(al))[0]
+    over = float(np.max(cl - cl_static))
+    return bool(over > 0.05)
+
+
+def check_f14_hysteresis():
+    """F14: Hysteresis loop non-degenerate"""
+    from aero_correction import StallModel, StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    sm = StallModel(polar, T_f=3.0, T_v=6.0, K_v=0.7)
+    n, dt, W = 900, 2.0e-3, 10.0
+    def ramp(a_start, a_end):
+        sm.reset()
+        cl = np.zeros(n)
+        al = np.zeros(n)
+        for i in range(n):
+            a0 = a_start + (a_end - a_start) * i / (n - 1)
+            al[i] = a0
+            sm.begin_step()
+            sm.update(np.deg2rad(a0), W, dt)
+            cl[i] = sm.Cl_ds
+        return al, cl
+    al_u, cl_u = ramp(0.0, 35.0)
+    al_d, cl_d = ramp(35.0, 0.0)
+    loop = float(np.trapezoid(cl_u - cl_d[::-1], np.deg2rad(al_u)))
+    return bool(abs(loop) > 1e-3 and np.all(np.isfinite(cl_u)))
+
+
+def check_f14_no_overshoot_attached():
+    """F14: No overshoot in attached flow (|alpha|<10 deg)"""
+    from aero_correction import StallModel, StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    sm = StallModel(polar, T_f=3.0, T_v=6.0, K_v=0.7)
+    n, dt, W = 900, 2.0e-3, 10.0
+    al = np.zeros(n)
+    cl = np.zeros(n)
+    for i in range(n):
+        a0 = 0.0 + 35.0 * i / (n - 1)
+        al[i] = a0
+        sm.begin_step()
+        sm.update(np.deg2rad(a0), W, dt)
+        cl[i] = sm.Cl_ds
+    cl_static = polar.eval(np.deg2rad(al))[0]
+    diff = np.max(cl[al < 10.0] - cl_static[al < 10.0])
+    return bool(diff < 5e-3)
+
+
+def check_f15_finite():
+    """F15: Coupled stall run is finite"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    fsi = FSICoupler(chord=1.0, sp=0.25, ar=0.35, R=5.0, omega=2.0,
+                     U_inf=10.0, rho=1.225, dt=0.005, stall=True,
+                     stall_polar=polar, n_panels=32, wake_cap=600,
+                     psi0_deg=5.0)
+    fsi.run(n_revolutions=0.5, verbose=False)
+    h = fsi.history()
+    return bool(np.all(np.isfinite(h['psi'])))
+
+
+def check_f15_lift_limited():
+    """F15: Lift is stall-limited where wind is live"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    fsi = FSICoupler(chord=1.0, sp=0.25, ar=0.35, R=5.0, omega=2.0,
+                     U_inf=10.0, rho=1.225, dt=0.005, stall=True,
+                     stall_polar=polar, n_panels=32, wake_cap=600,
+                     psi0_deg=5.0)
+    fsi.run(n_revolutions=0.5, verbose=False)
+    h = fsi.history()
+    sl = slice(5, None)
+    live = h['W'][sl] > 4.0
+    if not np.any(live):
+        return True
+    clmax_live = float(np.abs(h['Cl'][sl][live]).max())
+    return bool(clmax_live <= 1.6 * polar.cl_max)
+
+
+def check_f15_kappa():
+    """F15: kappa < 1 in stalled part of cycle"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    fsi = FSICoupler(chord=1.0, sp=0.25, ar=0.35, R=5.0, omega=2.0,
+                     U_inf=10.0, rho=1.225, dt=0.005, stall=True,
+                     stall_polar=polar, n_panels=32, wake_cap=600,
+                     psi0_deg=5.0)
+    fsi.run(n_revolutions=0.5, verbose=False)
+    h = fsi.history()
+    sl = slice(5, None)
+    al = np.rad2deg(h['alpha'][sl])
+    stalled = np.abs(al) > 20.0
+    live = h['W'][sl] > 4.0
+    kk = h['kappa'][sl][stalled & live]
+    if kk.size == 0:
+        return True
+    return bool(float(np.max(kk)) < 1.0 + 1e-9 and float(np.min(kk)) > -0.3)
+
+
+def check_f15_active():
+    """F15: Stall correction is active in cycle"""
+    from aero_correction import StaticPolar
+    polar = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
+    fsi = FSICoupler(chord=1.0, sp=0.25, ar=0.35, R=5.0, omega=2.0,
+                     U_inf=10.0, rho=1.225, dt=0.005, stall=True,
+                     stall_polar=polar, n_panels=32, wake_cap=600,
+                     psi0_deg=5.0)
+    fsi.run(n_revolutions=0.5, verbose=False)
+    h = fsi.history()
+    sl = slice(5, None)
+    live = h['W'][sl] > 4.0
+    if not np.any(live):
+        return False
+    need = float(np.mean(np.abs(h['Cl'][sl][live]) > 1.4))
+    return bool(need > 0.0)
+
+
+def check_f16_age_conservation():
+    """F16: Age-decimated wake circulation/moment conservation"""
+    N, CAP, LEVELS, DS = 3720, 600, 5, 0.05
+    age = np.arange(N)
+    s = DS * (N - 1 - age)
+    x = s + 0.4 * np.sin(s / 3.0)
+    y = 0.35 * np.sin(2.0 * np.pi * s / 2.5)
+    g = 0.8 * np.cos(2.0 * np.pi * s / 2.5) * np.exp(-s / 40.0)
+    c2 = 0.02 ** 2 + 1.5e-5 * age
+    m = DVMFluidSolver(chord=1.0, n_panels=8, wake_cap=CAP,
+                       merge_mode='age', wake_levels=LEVELS)
+    big = N + 16
+    m.wx, m.wy, m.gw, m.c2w = (np.zeros(big), np.zeros(big),
+                               np.zeros(big), np.zeros(big))
+    m.wl = np.zeros(big, dtype=int)
+    m.wx[:N], m.wy[:N], m.gw[:N], m.c2w[:N] = x, y, g, c2
+    m.nw, m.lev_count[:], m.lev_count[0] = N, 0, N
+    while m.nw > CAP:
+        m._decimate()
+    dg = abs(m.gw[:m.nw].sum() - g.sum())
+    dmx = abs((m.gw[:m.nw] * m.wx[:m.nw]).sum() - (g * x).sum())
+    dmy = abs((m.gw[:m.nw] * m.wy[:m.nw]).sum() - (g * y).sum())
+    return bool(dg < 1e-12 and dmx < 1e-9 and dmy < 1e-9)
+
+
+def check_f16_age_sorted():
+    """F16: Age-decimated wake stays sorted by level"""
+    N, CAP, LEVELS, DS = 3720, 600, 5, 0.05
+    age = np.arange(N)
+    s = DS * (N - 1 - age)
+    x = s + 0.4 * np.sin(s / 3.0)
+    y = 0.35 * np.sin(2.0 * np.pi * s / 2.5)
+    g = 0.8 * np.cos(2.0 * np.pi * s / 2.5) * np.exp(-s / 40.0)
+    c2 = 0.02 ** 2 + 1.5e-5 * age
+    m = DVMFluidSolver(chord=1.0, n_panels=8, wake_cap=CAP,
+                       merge_mode='age', wake_levels=LEVELS)
+    big = N + 16
+    m.wx, m.wy, m.gw, m.c2w = (np.zeros(big), np.zeros(big),
+                               np.zeros(big), np.zeros(big))
+    m.wl = np.zeros(big, dtype=int)
+    m.wx[:N], m.wy[:N], m.gw[:N], m.c2w[:N] = x, y, g, c2
+    m.nw, m.lev_count[:], m.lev_count[0] = N, 0, N
+    while m.nw > CAP:
+        m._decimate()
+    lv = m.wl[:m.nw]
+    return bool(np.all(np.diff(lv) <= 0))
+
+
+def check_f16_age_memory_bound():
+    """F16: Age-decimated wake memory bound respected"""
+    N, CAP, LEVELS, DS = 3720, 600, 5, 0.05
+    age = np.arange(N)
+    s = DS * (N - 1 - age)
+    x = s + 0.4 * np.sin(s / 3.0)
+    y = 0.35 * np.sin(2.0 * np.pi * s / 2.5)
+    g = 0.8 * np.cos(2.0 * np.pi * s / 2.5) * np.exp(-s / 40.0)
+    c2 = 0.02 ** 2 + 1.5e-5 * age
+    m = DVMFluidSolver(chord=1.0, n_panels=8, wake_cap=CAP,
+                       merge_mode='age', wake_levels=LEVELS)
+    big = N + 16
+    m.wx, m.wy, m.gw, m.c2w = (np.zeros(big), np.zeros(big),
+                               np.zeros(big), np.zeros(big))
+    m.wl = np.zeros(big, dtype=int)
+    m.wx[:N], m.wy[:N], m.gw[:N], m.c2w[:N] = x, y, g, c2
+    m.nw, m.lev_count[:], m.lev_count[0] = N, 0, N
+    while m.nw > CAP:
+        m._decimate()
+    lv = m.wl[:m.nw]
+    npl = m.n_per_level
+    return bool(m.nw <= CAP and all(int((lv == L).sum()) <= npl
+                                    for L in range(LEVELS + 1)))
+
+
+def check_f16_age_memory_size():
+    """F16: Effective wake memory = n_per_level*(2^L-1)"""
+    N, CAP, LEVELS, DS = 3720, 600, 5, 0.05
+    age = np.arange(N)
+    s = DS * (N - 1 - age)
+    x = s + 0.4 * np.sin(s / 3.0)
+    y = 0.35 * np.sin(2.0 * np.pi * s / 2.5)
+    g = 0.8 * np.cos(2.0 * np.pi * s / 2.5) * np.exp(-s / 40.0)
+    c2 = 0.02 ** 2 + 1.5e-5 * age
+    m = DVMFluidSolver(chord=1.0, n_panels=8, wake_cap=CAP,
+                       merge_mode='age', wake_levels=LEVELS)
+    big = N + 16
+    m.wx, m.wy, m.gw, m.c2w = (np.zeros(big), np.zeros(big),
+                               np.zeros(big), np.zeros(big))
+    m.wl = np.zeros(big, dtype=int)
+    m.wx[:N], m.wy[:N], m.gw[:N], m.c2w[:N] = x, y, g, c2
+    m.nw, m.lev_count[:], m.lev_count[0] = N, 0, N
+    while m.nw > CAP:
+        m._decimate()
+    return bool(m.wake_stats()['equivalent_steps'] == 3720)
+
+
+def check_f16_induced_velocity():
+    """F16: Near-blade induced velocity preserved by age decimation"""
+    N, CAP, LEVELS, DS = 3720, 600, 5, 0.05
+    age = np.arange(N)
+    s = DS * (N - 1 - age)
+    x = s + 0.4 * np.sin(s / 3.0)
+    y = 0.35 * np.sin(2.0 * np.pi * s / 2.5)
+    g = 0.8 * np.cos(2.0 * np.pi * s / 2.5) * np.exp(-s / 40.0)
+    c2 = 0.02 ** 2 + 1.5e-5 * age
+    probes = np.array([[0.5, 0.0], [2.0, 1.0], [5.0, 3.0], [15.0, 2.0]])
+
+    def ind(P, wx, wy, gw, c2w):
+        dx = P[:, 0][:, None] - wx[None, :]
+        dy = P[:, 1][:, None] - wy[None, :]
+        r2 = dx * dx + dy * dy + c2w[None, :]
+        u = (gw[None, :] * dy / (2 * np.pi * r2)).sum(axis=1)
+        v = (-gw[None, :] * dx / (2 * np.pi * r2)).sum(axis=1)
+        return np.column_stack((u, v))
+
+    ref = ind(probes, x, y, g, c2)
+    umax = float(np.hypot(*ref.T).max())
+    m = DVMFluidSolver(chord=1.0, n_panels=8, wake_cap=CAP,
+                       merge_mode='age', wake_levels=LEVELS)
+    big = N + 16
+    m.wx, m.wy, m.gw, m.c2w = (np.zeros(big), np.zeros(big),
+                               np.zeros(big), np.zeros(big))
+    m.wl = np.zeros(big, dtype=int)
+    m.wx[:N], m.wy[:N], m.gw[:N], m.c2w[:N] = x, y, g, c2
+    m.nw, m.lev_count[:], m.lev_count[0] = N, 0, N
+    while m.nw > CAP:
+        m._decimate()
+    out = ind(probes, m.wx[:m.nw], m.wy[:m.nw], m.gw[:m.nw], m.c2w[:m.nw])
+    err = float(np.abs(out - ref).max() / umax)
+    return bool(err < 5.0e-3)
+
+
+def check_f17_panel_invariant():
+    """F17: Drag invariant under panel refinement"""
+    a = 10.0
+    ns, cap = 500, 900
+    npan = (16, 32, 64, 128)
+    cd_n = []
+    for N in npan:
+        _, cdv, _, _ = static_run(a, n_panels=N, dt=0.01, n_steps=ns,
+                                  wake_cap=cap)
+        cd_n.append(cdv)
+    cd_n = np.array(cd_n)
+    spread = (cd_n.max() - cd_n.min()) / cd_n.mean()
+    return bool(spread < 0.05)
+
+
+def check_f17_wake_length():
+    """F17: Drag falls as 1/wake-length"""
+    a = 10.0
+    npan0, dt = 32, 0.01
+    steps = (250, 500, 1000)
+    cd_l = []
+    for n in steps:
+        _, cdv, _, _ = static_run(a, n_panels=npan0, dt=dt, n_steps=n,
+                                  wake_cap=n + 5,
+                                  average_last=max(20, n // 5))
+        cd_l.append(cdv)
+    cd_l = np.array(cd_l)
+    Lw = dt * 10.0 * np.array(steps)
+    slope = np.polyfit(np.log(Lw), np.log(cd_l), 1)[0]
+    prod = cd_l * Lw
+    return bool(abs(slope + 1.0) < 0.25 and prod.max() / prod.min() < 1.35)
+
+
+def check_f18_loads_identical():
+    """F18: Floor leaves loads bit-identical"""
+    a = np.deg2rad(20.0)
+    beta = 0.5 * np.pi
+    n, dt = 4000, 0.005
+    Ws = np.linspace(10.0, 0.1, n)
+    rec_f, rec_t = [], []
+    for wmin in (2.0, 0.0):
+        s = DVMFluidSolver(chord=1.0, n_panels=32, rho=1.225, dt=dt,
+                           wake_cap=300, coeff_W_min=wmin)
+        s.update_kinematics(np.zeros(2), beta, np.zeros(2), 0.0)
+        s.begin_step(Ws[0] * np.array([np.cos(a), np.sin(a)]))
+        rec = []
+        for W in Ws:
+            wind = W * np.array([np.cos(a), np.sin(a)])
+            s.begin_step(wind)
+            s.solve()
+            L = s.loads()
+            rec.append((L['Cl'], L['F'].copy(), L['Mz'], L['coeff_valid']))
+            s.end_step()
+        if wmin == 2.0:
+            rec_f = rec
+        else:
+            rec_t = rec
+    dF = max(float(np.abs(a1[1] - b1[1]).max())
+             for a1, b1 in zip(rec_f, rec_t))
+    dMz = max(abs(a1[2] - b1[2]) for a1, b1 in zip(rec_f, rec_t))
+    return bool(dF == 0.0 and dMz == 0.0)
+
+
+def check_f18_floor_caps():
+    """F18: Floor caps dead-point blow-up at (W_ref/W)^2"""
+    a = np.deg2rad(20.0)
+    beta = 0.5 * np.pi
+    n, dt = 4000, 0.005
+    Ws = np.linspace(10.0, 0.1, n)
+    rec_f, rec_t = [], []
+    for wmin in (2.0, 0.0):
+        s = DVMFluidSolver(chord=1.0, n_panels=32, rho=1.225, dt=dt,
+                           wake_cap=300, coeff_W_min=wmin)
+        s.update_kinematics(np.zeros(2), beta, np.zeros(2), 0.0)
+        s.begin_step(Ws[0] * np.array([np.cos(a), np.sin(a)]))
+        rec = []
+        for W in Ws:
+            wind = W * np.array([np.cos(a), np.sin(a)])
+            s.begin_step(wind)
+            s.solve()
+            L = s.loads()
+            rec.append((L['Cl'], L['F'].copy(), L['Mz'], L['coeff_valid']))
+            s.end_step()
+        if wmin == 2.0:
+            rec_f = rec
+        else:
+            rec_t = rec
+    cl_f = np.array([r[0] for r in rec_f])
+    cl_t = np.array([r[0] for r in rec_t])
+    ratio = cl_t[-1] / cl_f[-1]
+    return bool(abs(ratio - (2.0 / Ws[-1]) ** 2) < 1e-6 and ratio > 1.0e2)
+
+
+def check_f18_floored_bounded():
+    """F18: Floored coefficients stay bounded where true diverge"""
+    a = np.deg2rad(20.0)
+    beta = 0.5 * np.pi
+    n, dt = 4000, 0.005
+    Ws = np.linspace(10.0, 0.1, n)
+    rec_f, rec_t = [], []
+    for wmin in (2.0, 0.0):
+        s = DVMFluidSolver(chord=1.0, n_panels=32, rho=1.225, dt=dt,
+                           wake_cap=300, coeff_W_min=wmin)
+        s.update_kinematics(np.zeros(2), beta, np.zeros(2), 0.0)
+        s.begin_step(Ws[0] * np.array([np.cos(a), np.sin(a)]))
+        rec = []
+        for W in Ws:
+            wind = W * np.array([np.cos(a), np.sin(a)])
+            s.begin_step(wind)
+            s.solve()
+            L = s.loads()
+            rec.append((L['Cl'], L['F'].copy(), L['Mz'], L['coeff_valid']))
+            s.end_step()
+        if wmin == 2.0:
+            rec_f = rec
+        else:
+            rec_t = rec
+    cl_f = np.array([r[0] for r in rec_f])
+    cl_t = np.array([r[0] for r in rec_t])
+    floored = Ws < 2.0
+    floored[:50] = False
+    mf = float(np.abs(cl_f[floored]).max())
+    mrat = float(np.max(np.abs(cl_t[floored])
+                        / np.maximum(np.abs(cl_f[floored]), 1e-12)))
+    return bool(mf < 4.0 and mrat > 50.0)
+
+
+def check_f18_coeff_valid():
+    """F18: coeff_valid flags exactly the floored samples"""
+    a = np.deg2rad(20.0)
+    beta = 0.5 * np.pi
+    n, dt = 4000, 0.005
+    Ws = np.linspace(10.0, 0.1, n)
+    rec_f = []
+    for wmin in (2.0, 0.0):
+        s = DVMFluidSolver(chord=1.0, n_panels=32, rho=1.225, dt=dt,
+                           wake_cap=300, coeff_W_min=wmin)
+        s.update_kinematics(np.zeros(2), beta, np.zeros(2), 0.0)
+        s.begin_step(Ws[0] * np.array([np.cos(a), np.sin(a)]))
+        rec = []
+        for W in Ws:
+            wind = W * np.array([np.cos(a), np.sin(a)])
+            s.begin_step(wind)
+            s.solve()
+            L = s.loads()
+            rec.append((L['Cl'], L['F'].copy(), L['Mz'], L['coeff_valid']))
+            s.end_step()
+        if wmin == 2.0:
+            rec_f = rec
+    return bool(rec_f[0][3] and not rec_f[-1][3])
+
+
+def check_f19_steady_vortex():
+    """F19: Vortex moment vanishes in steady state"""
+    from aero_correction import StaticPolar, StallModel
+    polar = StaticPolar.viterna()
+    sm = StallModel(polar)
+    sm.reset()
+    a20 = np.deg2rad(20.0)
+    for _ in range(6000):
+        sm.begin_step()
+        sm.update(a20, 10.0, 2.0e-3)
+    return bool(abs(sm.Cm_vx) < 1.0e-9)
+
+
+def check_f19_steady_polar():
+    """F19: Steady Cm still equals polar"""
+    from aero_correction import StaticPolar, StallModel
+    polar = StaticPolar.viterna()
+    sm = StallModel(polar)
+    sm.reset()
+    a20 = np.deg2rad(20.0)
+    for _ in range(6000):
+        sm.begin_step()
+        sm.update(a20, 10.0, 2.0e-3)
+    cm_pol = float(polar.eval(a20)[2])
+    return bool(abs(sm.Cm_ext - cm_pol) < 1.0e-9)
+
+
+def check_f19_nose_down_break():
+    """F19: Vortex gives nose-down moment break in stall transient"""
+    from aero_correction import StaticPolar, StallModel
+    polar = StaticPolar.viterna()
+    n, dt, W = 1200, 2.0e-3, 10.0
+    al = np.zeros(n)
+    cm_v, cm_0, xv = np.zeros(n), np.zeros(n), np.zeros(n)
+    for vm, dst in ((True, cm_v), (False, cm_0)):
+        s = StallModel(polar, vortex_moment=vm)
+        s.reset()
+        for i in range(n):
+            d = -2.0 + 34.0 * i / (n - 1)
+            al[i] = d
+            s.begin_step()
+            s.update(np.deg2rad(d), W, dt)
+            dst[i] = s.Cm_ext
+            if vm:
+                xv[i] = s.xv
+    dv = cm_v - cm_0
+    return bool(-0.30 < dv.min() < -0.005)
+
+
+def check_f19_neglect_attached():
+    """F19: Vortex moment negligible while attached"""
+    from aero_correction import StaticPolar, StallModel
+    polar = StaticPolar.viterna()
+    n, dt, W = 1200, 2.0e-3, 10.0
+    al = np.zeros(n)
+    cm_v, cm_0 = np.zeros(n), np.zeros(n)
+    for vm, dst in ((True, cm_v), (False, cm_0)):
+        s = StallModel(polar, vortex_moment=vm)
+        s.reset()
+        for i in range(n):
+            d = -2.0 + 34.0 * i / (n - 1)
+            al[i] = d
+            s.begin_step()
+            s.update(np.deg2rad(d), W, dt)
+            dst[i] = s.Cm_ext
+    dv = cm_v - cm_0
+    return bool(float(np.abs(dv[al < 12.0]).max()) < 5.0e-3)
+
+
+def check_f19_vortex_convection():
+    """F19: Vortex convects over chord and re-born at LE"""
+    from aero_correction import StaticPolar, StallModel
+    polar = StaticPolar.viterna()
+    n, dt, W = 1200, 2.0e-3, 10.0
+    al = np.zeros(n)
+    cm_v, cm_0, xv = np.zeros(n), np.zeros(n), np.zeros(n)
+    for vm, dst in ((True, cm_v), (False, cm_0)):
+        s = StallModel(polar, vortex_moment=vm)
+        s.reset()
+        for i in range(n):
+            d = -2.0 + 34.0 * i / (n - 1)
+            al[i] = d
+            s.begin_step()
+            s.update(np.deg2rad(d), W, dt)
+            dst[i] = s.Cm_ext
+            if vm:
+                xv[i] = s.xv
+    i_birth = int(np.searchsorted(al, 15.0))
+    return bool(0.0 < xv.min() and xv.max() <= 1.0 and xv[i_birth] <= 0.5)
+
+
+def check_f19_continuous():
+    """F19: Vortex moment continuous (no jump at re-birth)"""
+    from aero_correction import StaticPolar, StallModel
+    polar = StaticPolar.viterna()
+    n, dt, W = 1200, 2.0e-3, 10.0
+    al = np.zeros(n)
+    cm_v, cm_0, xv = np.zeros(n), np.zeros(n), np.zeros(n)
+    for vm, dst in ((True, cm_v), (False, cm_0)):
+        s = StallModel(polar, vortex_moment=vm)
+        s.reset()
+        for i in range(n):
+            d = -2.0 + 34.0 * i / (n - 1)
+            al[i] = d
+            s.begin_step()
+            s.update(np.deg2rad(d), W, dt)
+            dst[i] = s.Cm_ext
+            if vm:
+                xv[i] = s.xv
+    dv = cm_v - cm_0
+    jump = float(np.abs(np.diff(dv)).max())
+    return bool(jump < 5.0e-3)
+
+
+def check_f16_oldest_conservation():
+    """F16: Oldest-pair wake circulation/moment conservation"""
+    N, CAP, LEVELS, DS = 3720, 600, 5, 0.05
+    age = np.arange(N)
+    s = DS * (N - 1 - age)
+    x = s + 0.4 * np.sin(s / 3.0)
+    y = 0.35 * np.sin(2.0 * np.pi * s / 2.5)
+    g = 0.8 * np.cos(2.0 * np.pi * s / 2.5) * np.exp(-s / 40.0)
+    c2 = 0.02 ** 2 + 1.5e-5 * age
+    m = DVMFluidSolver(chord=1.0, n_panels=8, wake_cap=CAP,
+                       merge_mode='oldest', wake_levels=LEVELS)
+    big = N + 16
+    m.wx, m.wy, m.gw, m.c2w = (np.zeros(big), np.zeros(big),
+                               np.zeros(big), np.zeros(big))
+    m.wl = np.zeros(big, dtype=int)
+    m.wx[:N], m.wy[:N], m.gw[:N], m.c2w[:N] = x, y, g, c2
+    m.nw, m.lev_count[:], m.lev_count[0] = N, 0, N
+    while m.nw > CAP:
+        m._decimate()
+    dg = abs(m.gw[:m.nw].sum() - g.sum())
+    dmx = abs((m.gw[:m.nw] * m.wx[:m.nw]).sum() - (g * x).sum())
+    dmy = abs((m.gw[:m.nw] * m.wy[:m.nw]).sum() - (g * y).sum())
+    return bool(dg < 1e-12 and dmx < 1e-9 and dmy < 1e-9)
+
+
 if __name__ == "__main__":
     ok = main()
     sys.exit(0 if ok else 1)
