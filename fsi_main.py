@@ -49,6 +49,7 @@ moment about the pivot, so the coupler transfers it:
 from __future__ import annotations
 
 import time
+
 import numpy as np
 
 from fluid_solver import DVMFluidSolver
@@ -128,7 +129,7 @@ class FSICoupler:
         self.stall_polar = None
         self.stall_model = None
         if stall or stall_polar is not None:
-            from aero_correction import StaticPolar, StallModel
+            from aero_correction import StallModel, StaticPolar
             if stall_polar is None:
                 self.stall_polar = StaticPolar.viterna(
                     alpha_stall=stall_alpha_stall,
@@ -319,7 +320,7 @@ class FSICoupler:
 
     def run(self, n_revolutions: float = 4.0, verbose: bool = True):
         T_rev = 2.0 * np.pi / self.omega
-        n_steps = int(round(n_revolutions * T_rev / self.dt))
+        n_steps = round(n_revolutions * T_rev / self.dt)
         t0 = time.perf_counter()
         if verbose:
             print(f"FSI run: {n_revolutions} revolutions, {n_steps} steps")
@@ -368,26 +369,26 @@ class FSICoupler:
 
 
 def create_fsi_coupler(config=None):
-    cfg = dict(
-        chord=1.0, sp=0.25, ar=0.35, R=5.0, omega=2.0, U_inf=10.0,
-        rho=1.225, dt=0.005, induction=0.0,
-        m_blade=5.0, cg_blade=0.25, m_cw=2.5, r_cw=0.35,
-        c_b=0.15, mu_c=0.0, win_deg=25.0, wstop=50.0,
-        psi0_deg=5.0, n_panels=32, wake_cap=600,
-        core_bound=0.002, core_wake=0.02, wake_substeps=1,
-        viscous_cd0=0.0, n_coupling_iter=3, coupling_tol=1e-4, relax=0.7,
-        stall=False, stall_polar=None, stall_alpha_stall=14.0,
-        stall_T_a=0.0, stall_T_f=3.0, stall_T_v=6.0, stall_K_v=0.7,
-        stall_vortex_lift=True, stall_cd_sep_coeff=1.98, stall_cp_sep=0.5,
-        stall_cm_sep_const=None, stall_blend_state=False,
-        stall_vortex_moment=True, stall_x_v0=0.05, stall_conv_frac=1.0 / 3.0,
-        coeff_W_min=2.0)
+    cfg = {
+        'chord': 1.0, 'sp': 0.25, 'ar': 0.35, 'R': 5.0, 'omega': 2.0, 'U_inf': 10.0,
+        'rho': 1.225, 'dt': 0.005, 'induction': 0.0,
+        'm_blade': 5.0, 'cg_blade': 0.25, 'm_cw': 2.5, 'r_cw': 0.35,
+        'c_b': 0.15, 'mu_c': 0.0, 'win_deg': 25.0, 'wstop': 50.0,
+        'psi0_deg': 5.0, 'n_panels': 32, 'wake_cap': 600,
+        'core_bound': 0.002, 'core_wake': 0.02, 'wake_substeps': 1,
+        'viscous_cd0': 0.0, 'n_coupling_iter': 3, 'coupling_tol': 1e-4, 'relax': 0.7,
+        'stall': False, 'stall_polar': None, 'stall_alpha_stall': 14.0,
+        'stall_T_a': 0.0, 'stall_T_f': 3.0, 'stall_T_v': 6.0, 'stall_K_v': 0.7,
+        'stall_vortex_lift': True, 'stall_cd_sep_coeff': 1.98, 'stall_cp_sep': 0.5,
+        'stall_cm_sep_const': None, 'stall_blend_state': False,
+        'stall_vortex_moment': True, 'stall_x_v0': 0.05, 'stall_conv_frac': 1.0 / 3.0,
+        'coeff_W_min': 2.0}
     if config:
         cfg.update(config)
     return FSICoupler(**cfg)
 
 
 if __name__ == "__main__":
-    fsi = create_fsi_coupler(dict(dt=0.005, n_panels=24, wake_cap=400))
+    fsi = create_fsi_coupler({'dt': 0.005, 'n_panels': 24, 'wake_cap': 400})
     h = fsi.run(n_revolutions=0.5, verbose=True)
     print('last state:', fsi.state_dict())

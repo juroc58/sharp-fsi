@@ -5,6 +5,35 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Documentation
+
+- **README.md rewritten** with precise terminology: “Verification” (internal
+  numerical checks F1–F19), “Cross-check” (comparison vs `sharp-vawt-lab`, which
+  shares geometry/mass/pitch — not independent), “Validation” (independent
+  measured data — **none exists**). First screen answers what the code simulates,
+  what is verified/cross-checked/not validated, numerical limitations, production
+  defaults, reproduction, and what must never be claimed.
+- **Added “Do not claim” section**: no experimental validation, no real turbine
+  performance, no BEM validation-by-agreement, no counter-rotating gain
+  predictions, no deep-stall quantitative reliability, no converged result
+  without the convergence study.
+- **COMPARISON_REPORT.md**: removed all “validated” claims (the inversion
+  procedure is verified on the FSI itself; the stall-layer moment model is
+  qualitatively consistent, not validated; end-to-end load integration is
+  checked, not validated). Added the terminology note.
+- **scripts/convergence_study.py added**: one-at-a-time numerical sensitivity
+  study (panels, dt, wake_cap, substeps, coupling iters/tol/relax, stall on/off,
+  vortex moment on/off, TSR = 1/3/4.5) writing CSV/JSON + plots, with a
+  convergence-recommendation table. Key results:
+  - Numerical solver converged at documented defaults for TSR=1 and TSR=4.5
+    (max|dCp| < 0.02 across panels/dt/wake/coupling).
+  - At TSR=3 (design point): dt=0.005 shows moderate sensitivity
+    (max|dCp|=0.0472 — see U5), n_coupling_iter borderline at TSR=4.5 (0.0351).
+  - Stall model dominates all sensitivities (expected — physics change).
+  - Kelvin budget ~1e-13 across all cases; wake population bounded.
+
 ## [1.0.0] - 2026-10-19
 
 Initial public release.

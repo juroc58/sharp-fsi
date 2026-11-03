@@ -31,23 +31,28 @@ from the defaults, so runs never overwrite each other.
 from __future__ import annotations
 
 import sys
-import numpy as np
+from pathlib import Path
+
 import matplotlib
+import numpy as np
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root
+
 from fsi_main import FSICoupler
 
-CONFIG = dict(
-    chord=1.0, sp=0.25, ar=0.35, R=5.0, omega=2.0, U_inf=10.0, rho=1.225,
-    dt=0.005, induction=0.0,
-    m_blade=5.0, cg_blade=0.25, m_cw=2.5, r_cw=0.35,
-    c_b=0.15, mu_c=0.0, win_deg=25.0, wstop=50.0, psi0_deg=5.0,
-    n_panels=32, wake_cap=600, core_bound=0.002, core_wake=0.02,
-    wake_substeps=1, viscous_cd0=0.0,
-    n_coupling_iter=3, coupling_tol=1e-4, relax=0.7,
-)
+CONFIG = {
+    'chord': 1.0, 'sp': 0.25, 'ar': 0.35, 'R': 5.0, 'omega': 2.0, 'U_inf': 10.0, 'rho': 1.225,
+    'dt': 0.005, 'induction': 0.0,
+    'm_blade': 5.0, 'cg_blade': 0.25, 'm_cw': 2.5, 'r_cw': 0.35,
+    'c_b': 0.15, 'mu_c': 0.0, 'win_deg': 25.0, 'wstop': 50.0, 'psi0_deg': 5.0,
+    'n_panels': 32, 'wake_cap': 600, 'core_bound': 0.002, 'core_wake': 0.02,
+    'wake_substeps': 1, 'viscous_cd0': 0.0,
+    'n_coupling_iter': 3, 'coupling_tol': 1e-4, 'relax': 0.7,
+}
 
 
 def aero_config(name='potential'):
@@ -56,13 +61,13 @@ def aero_config(name='potential'):
     if name in ('potential', 'none', 'inviscid'):
         return {'stall': False}, 'potential'
     if name in ('stall', 'viterna'):
-        return dict(stall=True, stall_alpha_stall=14.0,
-                    viscous_cd0=8.0e-3), 'stall'
+        return {'stall': True, 'stall_alpha_stall': 14.0,
+                    'viscous_cd0': 8.0e-3}, 'stall'
     if name in ('naca', 'naca0012'):
         from aero_correction import StaticPolar
         polar = StaticPolar.naca0012()
-        return dict(stall=True, stall_polar=polar,
-                    viscous_cd0=8.0e-3), 'naca'
+        return {'stall': True, 'stall_polar': polar,
+                    'viscous_cd0': 8.0e-3}, 'naca'
     raise SystemExit(f"unknown aero model '{name}' "
                      "(use potential | stall | naca)")
 
@@ -150,10 +155,10 @@ def summarize(fsi, h, akey='potential'):
 def make_validation_figure(fsi, h, tag='', akey='potential'):
     T_rev = 2 * np.pi / fsi.omega
     t = h['t']
-    phi = np.rad2deg(h['phi'])
+    np.rad2deg(h['phi'])
     psi = np.rad2deg(h['psi'])
     alpha = np.rad2deg(h['alpha'])
-    cl, cd, cm = h['Cl'], h['Cd'], h['Cm']
+    cl, _cd, _cm = h['Cl'], h['Cd'], h['Cm']
     n_rev = int(np.floor(t[-1] / T_rev))
 
     fig = plt.figure(figsize=(14, 6))

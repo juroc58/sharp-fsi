@@ -34,13 +34,17 @@ Usage:  python3 moment_model_check.py [history_file]
 
 from __future__ import annotations
 
-import sys
 import os
+import sys
+from pathlib import Path
 
-import numpy as np
 import matplotlib
+import numpy as np
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root
 
 from aero_correction import StaticPolar
 

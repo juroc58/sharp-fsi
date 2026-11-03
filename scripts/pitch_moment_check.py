@@ -32,16 +32,29 @@ Usage:  python3 pitch_moment_check.py [tsr] [aero]
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
-import numpy as np
 import matplotlib
+import numpy as np
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from compare_with_bem import (run_fsi, run_bem, geometry, mass_props,
-                              last_rev, wrap_deg, TWO_PI)
-from structural_solver import CPPCParams
+sys.path.insert(0, str(Path(__file__).resolve().parent))       # scripts/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root
+
+from compare_with_bem import (
+    TWO_PI,
+    geometry,
+    last_rev,
+    mass_props,
+    run_bem,
+    run_fsi,
+    wrap_deg,
+)
 from run_validation import CONFIG, aero_config
+
+from structural_solver import CPPCParams
 
 
 # --------------------------------------------------------------------------
@@ -57,9 +70,9 @@ def bem_params(tsr, U=10.0):
     Ip = (mp.mb * (g.c ** 2 / 12.0 + xb ** 2 + ar_len ** 2)
           + mp.mc * (xcw ** 2 + ar_len ** 2))
     wstop = 50.0
-    return dict(M=M, xg=xg, ar_len=ar_len, Rp=Rp, Ip=Ip, xb=xb, xcw=xcw,
-                c_b=0.15, win=np.deg2rad(25.0), omega=tsr * U / g.R,
-                k_s=Ip * wstop ** 2, c_s=2.0 * Ip * wstop)
+    return {'M': M, 'xg': xg, 'ar_len': ar_len, 'Rp': Rp, 'Ip': Ip, 'xb': xb, 'xcw': xcw,
+                'c_b': 0.15, 'win': np.deg2rad(25.0), 'omega': tsr * U / g.R,
+                'k_s': Ip * wstop ** 2, 'c_s': 2.0 * Ip * wstop}
 
 
 def fsi_params(tsr, U=10.0, aero='stall'):
@@ -183,7 +196,7 @@ def main():
             if s.sum():
                 out[i] = Qrun[m][s].mean()
         return out
-    fsi_run = dict(t=t, alpha=h['alpha'])
+    fsi_run = {'t': t, 'alpha': h['alpha']}
     p_fsi = prof(fsi_run, Q_ref)
     p_vit = prof(res['viterna'], res['viterna']['Q'])
     p_rea = prof(res['real'], res['real']['Q'])

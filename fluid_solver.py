@@ -122,7 +122,6 @@ from __future__ import annotations
 import numpy as np
 from scipy.spatial.distance import cdist
 
-
 TWO_PI = 2.0 * np.pi
 
 
@@ -446,8 +445,7 @@ class DVMFluidSolver:
         # reference (pitch) axis; the stall model needs the same alpha/W.
         Wgeo = self.wind - self.v_piv
         W = float(np.hypot(Wgeo[0], Wgeo[1]))
-        if W < 1e-9:
-            W = 1e-9
+        W = max(W, 1e-9)
         q = 0.5 * self.rho * W * W
         w_hat = Wgeo / W
         lift_dir = np.array([-w_hat[1], w_hat[0]])                # z_hat x w_hat

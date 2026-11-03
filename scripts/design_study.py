@@ -28,14 +28,20 @@ Outputs: design_tsr_sweep.csv, design_cw_sweep.csv, design_study_tsr.png,
 from __future__ import annotations
 
 import sys
+from pathlib import Path
 
-import numpy as np
 import matplotlib
+import numpy as np
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-from fsi_main import FSICoupler
+sys.path.insert(0, str(Path(__file__).resolve().parent))       # scripts/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root
+
 from run_validation import CONFIG, aero_config
+
+from fsi_main import FSICoupler
 
 TWO_PI = 2.0 * np.pi
 
@@ -50,7 +56,7 @@ def run_point(tsr, m_cw=None, r_cw=None, n_rev=2.0, aero='stall', **over):
     if r_cw is not None:
         cfg['r_cw'] = r_cw
     cfg.update(over)
-    acfg, akey = aero_config(aero)
+    acfg, _akey = aero_config(aero)
     cfg.update(acfg)
     fsi = FSICoupler(**cfg)
     h = fsi.run(n_revolutions=n_rev, verbose=False)
@@ -65,16 +71,16 @@ def run_point(tsr, m_cw=None, r_cw=None, n_rev=2.0, aero='stall', **over):
                                      * 2.0 * fsi.R)
     win = np.rad2deg(fsi.struct.p.win)
     stop = 100.0 * np.mean(np.abs(psi) > 0.98 * win)
-    return dict(
-        tsr=tsr, m_cw=fsi.struct.p.m_cw, r_cw=fsi.struct.p.xi_cw,
-        fn_ratio=fsi.struct.p.fn_ratio,
-        psi_eq_deg=np.rad2deg(fsi.struct.p.psi_eq),
-        psi_mean=psi.mean(), psi_min=psi.min(), psi_max=psi.max(),
-        stop_pct=stop, alpha_mean=al.mean(), alpha_rms=float(np.sqrt(
-            np.mean(al ** 2))), alpha_absmax=float(np.abs(al).max()),
-        cp_mean=float(cp[m].mean()), q_mean=float(h['Q_rotor'][m].mean()),
-        cl_max=float(np.abs(h['Cl'][m]).max()),
-        steps=fsi.step_count, secs=getattr(fsi, 'wall_time', float('nan')))
+    return {
+        'tsr': tsr, 'm_cw': fsi.struct.p.m_cw, 'r_cw': fsi.struct.p.xi_cw,
+        'fn_ratio': fsi.struct.p.fn_ratio,
+        'psi_eq_deg': np.rad2deg(fsi.struct.p.psi_eq),
+        'psi_mean': psi.mean(), 'psi_min': psi.min(), 'psi_max': psi.max(),
+        'stop_pct': stop, 'alpha_mean': al.mean(), 'alpha_rms': float(np.sqrt(
+            np.mean(al ** 2))), 'alpha_absmax': float(np.abs(al).max()),
+        'cp_mean': float(cp[m].mean()), 'q_mean': float(h['Q_rotor'][m].mean()),
+        'cl_max': float(np.abs(h['Cl'][m]).max()),
+        'steps': fsi.step_count, 'secs': getattr(fsi, 'wall_time', float('nan'))}
 
 
 KEYS = ('tsr', 'm_cw', 'r_cw', 'fn_ratio', 'psi_eq_deg', 'psi_mean', 'psi_min',
@@ -228,7 +234,7 @@ def main():
               f"psi_eq={best['psi_eq_deg']:+.2f} deg, stop={best['stop_pct']:.1f}%, "
               f"fn_ratio={best['fn_ratio']:.2f}")
     if mode in ('tsr', 'both'):
-        cw = dict(m_cw=best['m_cw'], r_cw=best['r_cw']) if best else {}
+        cw = {'m_cw': best['m_cw'], 'r_cw': best['r_cw']} if best else {}
         plot_tsr(tsr_sweep(aero, n_rev, **cw), best=best)
 
 

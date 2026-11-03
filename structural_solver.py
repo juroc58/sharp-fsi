@@ -59,6 +59,7 @@ natural frequency is omega_n = sqrt(M*omega^2*Rp*(ar*c)/I_p) to leading order.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+
 import numpy as np
 
 

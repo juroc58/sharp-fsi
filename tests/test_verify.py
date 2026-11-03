@@ -8,7 +8,6 @@ import pytest
 
 import verify_solver
 
-
 _CHECK_FUNCS = [
     (
         name,

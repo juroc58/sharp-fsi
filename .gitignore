@@ -59,3 +59,10 @@ CLAUDE.md
 opencode.json
 .opencode/
 repomix-output.xml
+
+# --- local working artifacts (not committed) ---
+AUDIT_PLAN.md
+BUGS_AND_ISSUES.md
+convergence_study.log
+convergence_study/
+verify_baseline.log

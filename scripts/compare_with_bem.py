@@ -52,16 +52,18 @@ Usage:  python3 compare_with_bem.py [tsr] [n_rev] [aero]
 
 from __future__ import annotations
 
-import os
 import sys
+from pathlib import Path
 
-import numpy as np
 import matplotlib
+import numpy as np
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import ref_solver                                                     # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parent))       # scripts/
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root
+import ref_solver
 
 REF_ROOT = ref_solver.find()
 if REF_ROOT is None:
@@ -69,12 +71,18 @@ if REF_ROOT is None:
 if REF_ROOT not in sys.path:
     sys.path.insert(0, REF_ROOT)
 
-from vawt_core import (Geometry, MassProps, AeroConfig, SimConfig,   # noqa: E402
-                       PolarDatabase, CycloturbineSim)
+from run_validation import CONFIG, aero_config
+from vawt_core import (
+    AeroConfig,
+    CycloturbineSim,
+    Geometry,
+    MassProps,
+    PolarDatabase,
+    SimConfig,
+)
 
-from fsi_main import FSICoupler                                       # noqa: E402
-from run_validation import CONFIG, aero_config                        # noqa: E402
-from aero_correction import StaticPolar                               # noqa: E402
+from aero_correction import StaticPolar
+from fsi_main import FSICoupler
 
 POLAR_DIR = None          # resolved lazily, only if case C is requested
 
@@ -103,10 +111,10 @@ TWO_PI = 2.0 * np.pi
 # sharp-vawt-lab's are in chords (tau = c/W), hence the factor 1/2 when
 # translating FSI -> BEM.  K_v, the separated moment and the drag model are
 # matched too so that case D compares the SAME aero model on both sides.
-STALL_FSI = dict(stall=True, stall_alpha_stall=14.0, stall_T_a=0.0,
-                 stall_T_f=3.0, stall_T_v=6.0, stall_K_v=0.5,
-                 stall_cm_sep_const=0.05, viscous_cd0=8.0e-3)
-STALL_BEM = dict(ds_Ta=1.0e-6, ds_Tf=1.5, ds_Tv=3.0, ds_Kv=0.5, ds_Knc=0.0)
+STALL_FSI = {'stall': True, 'stall_alpha_stall': 14.0, 'stall_T_a': 0.0,
+                 'stall_T_f': 3.0, 'stall_T_v': 6.0, 'stall_K_v': 0.5,
+                 'stall_cm_sep_const': 0.05, 'viscous_cd0': 8.0e-3}
+STALL_BEM = {'ds_Ta': 1.0e-6, 'ds_Tf': 1.5, 'ds_Tv': 3.0, 'ds_Kv': 0.5, 'ds_Knc': 0.0}
 
 
 def viterna_polar():
@@ -137,10 +145,10 @@ def flat_plate(alpha):
 def _aero(case):
     """AeroConfig + polar database for each comparison case."""
     g = geometry()
-    common = dict(polar_dir='', use_tip_loss=False, use_dmst=False,
-                  use_dynamic_inflow=False, use_flow_curvature=False,
-                  cd_add=0.0, win_deg=25.0, wstop=50.0, cb=0.15, kc=0.0,
-                  mu_c=0.0, r_bearing=0.0)
+    common = {'polar_dir': '', 'use_tip_loss': False, 'use_dmst': False,
+                  'use_dynamic_inflow': False, 'use_flow_curvature': False,
+                  'cd_add': 0.0, 'win_deg': 25.0, 'wstop': 50.0, 'cb': 0.15, 'kc': 0.0,
+                  'mu_c': 0.0, 'r_bearing': 0.0}
     if case == 'real':
         ae = AeroConfig(use_dynamic_stall=True, a_fix=0.2, **common)
         pdb = PolarDatabase(_require_polar_dir(), g)
@@ -164,13 +172,13 @@ def run_bem(tsr, case, n_rev=4.0, dt=1e-3, stride=5, U=10.0, rho=1.225):
     T_rev = TWO_PI / omega
     sim_cfg = SimConfig(U=U, tsr=tsr, free=False, psi0_deg=5.0, dt=dt,
                         T_max=n_rev * T_rev, stride=stride, rho=rho,
-                        n_rev_fixed=int(round(n_rev)))
+                        n_rev_fixed=round(n_rev))
     _, ae, pdb = _aero(case)
     sim = CycloturbineSim(g, mass_props(), ae, sim_cfg, polar_db=pdb)
     res = sim.run(store_history=True)
     h = res['history']
-    return dict(t=h['t'], phi=h['th'] % TWO_PI, phi_un=h['th'], psi=h['psi'],
-                alpha=h['alpha'], Cl=None, torque=h['Tsum'], raw=h, res=res)
+    return {'t': h['t'], 'phi': h['th'] % TWO_PI, 'phi_un': h['th'], 'psi': h['psi'],
+                'alpha': h['alpha'], 'Cl': None, 'torque': h['Tsum'], 'raw': h, 'res': res}
 
 
 def run_fsi(tsr, n_rev=4.0, tag='', aero='potential'):
@@ -306,7 +314,7 @@ def main():
               f"rms(dalpha)={np.sqrt(np.mean(dal**2)):6.2f} deg  "
               f"<dT>={dT.mean():+7.3f} Nm")
         # azimuth-binned (removes small timing offsets)
-        pb, pb_r = binned(c['phi'][:n][m_c], wrap_deg(c['psi'][:n][m_c]))
+        _pb, pb_r = binned(c['phi'][:n][m_c], wrap_deg(c['psi'][:n][m_c]))
         _, pf_r = binned(h_fsi['phi'][:n][m_f], wrap_deg(h_fsi['psi'][:n][m_f]))
         if len(pb_r) == len(pf_r):
             d = pb_r - pf_r

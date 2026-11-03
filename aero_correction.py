@@ -85,6 +85,8 @@ Everything is SI / radians internally.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 
 TWO_PI = 2.0 * np.pi
@@ -272,9 +274,12 @@ class StaticPolar:
         # The reference solver ships these tables (see ref_solver.py).  Looked up
         # lazily so this module stays usable on its own.
         try:
-            _here = os.path.dirname(os.path.abspath(__file__))
-            if _here not in sys.path:
-                sys.path.insert(0, _here)
+            _here = Path(__file__).resolve()
+            _root = _here.parent
+            _scripts = _root / "scripts"
+            for _p in (str(_root), str(_scripts)):
+                if _p not in sys.path:
+                    sys.path.insert(0, _p)
             import ref_solver
             _ref = ref_solver.polar_dir()
         except Exception:                                   # pragma: no cover

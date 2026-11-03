@@ -10,13 +10,13 @@ validation, and not a design tool for real turbines.
 | Question | Answer |
 |---|---|
 | **What does it simulate?** | One 2-D blade section of a passive variable-pitch (CPPC) cycloturbine in incompressible flow. The fluid is an unsteady discrete-vortex method (DVM) with a free wake; the structure is a 1-DOF rocking-pitch CPPC model with elastic stops; the two are coupled two-way per time step. |
-| **What is verified?** | Internal numerical behaviour: 54 checks (F1–F19) covering static lift `Cl = 2π sin α`, d'Alembert drag, quarter-chord moment, Wagner impulsive start, panel/timestep convergence, structural frequency, pitch-stop law, coupled Kelvin circulation budget (~1e-13), added-mass term, stall-layer transparency in attached flow, static-polar reproduction, dynamic-stall hysteresis, multiresolution wake conservation, dead-point coefficient flooring, and leading-edge-vortex moment. Run `python3 verify_solver.py`. |
-| **What is cross-checked?** | Against the separate BEM/CPPC solver `sharp-vawt-lab` (`juroc58/sharp-vawt-lab`, `vawt_core.py`). The two codes share geometry, mass properties and the pitch equation — so agreement is a **cross-check**, not independent validation. Four progressively better-matched BEM aero models are compared at matched TSR = 1 and design TSR = 3. Run `python3 compare_with_bem.py`. |
+| **What is verified?** | Internal numerical behaviour: 54 checks (F1–F19) covering static lift `Cl = 2π sin α`, d'Alembert drag, quarter-chord moment, Wagner impulsive start, panel/timestep convergence, structural frequency, pitch-stop law, coupled Kelvin circulation budget (~1e-13), added-mass term, stall-layer transparency in attached flow, static-polar reproduction, dynamic-stall hysteresis, multiresolution wake conservation, dead-point coefficient flooring, and leading-edge-vortex moment. Run `python3 scripts/verify_solver.py`. |
+| **What is cross-checked?** | Against the separate BEM/CPPC solver `sharp-vawt-lab` (`juroc58/sharp-vawt-lab`, `vawt_core.py`). The two codes share geometry, mass properties and the pitch equation — so agreement is a **cross-check**, not independent validation. Four progressively better-matched BEM aero models are compared at matched TSR = 1 and design TSR = 3. Run `python3 scripts/compare_with_bem.py`. |
 | **What is NOT validated?** | **Nothing.** There is no comparison against independent measured data (wind-tunnel, prototype, flight). Dynamic-stall absolute loads are indicative, not predictive. Do not claim experimental validation. |
 | **Main numerical limitations** | 2-D single section only (no blade thickness, no tip loss, no induction, no 3-D losses); residual potential drag is a finite-wake effect `Cd ≈ K·Cl² ∝ 1/L_wake`; deep-stall load replacement beyond ~85–95° is semi-empirical and uncalibrated; coefficients are meaningless at the zero-relative-wind dead point (`|W| → 0`, floored at `coeff_W_min`, flagged by `coeff_valid`). |
 | **Production defaults** | `n_panels=32`, `dt=0.005 s`, `wake_cap=600`, `wake_substeps=1`, `n_coupling_iter=3`, `coupling_tol=1e-4`, `relax=0.7`, stall layer ON (Viterna polar, `T_f=3`, `T_v=6`, `K_v=0.7`, vortex moment ON, blend_state OFF), `coeff_W_min=2.0 m/s`. See `scripts/convergence_study.py` for the sensitivity evidence behind these values. |
 | **dt sensitivity** | Design-point Cp at TSR ≈ 3 is dt-sensitive: halving dt from 5 ms to 2.5 ms changes Cp by ~5 %. Use `dt = 2.5 ms` for quantitative design-point work; `dt = 5 ms` is adequate away from stall onset. |
-| **How to reproduce the main result** | `python3 compare_with_bem.py 1.0 4 stall` → matched stalled case at TSR = 1 (FSI torque +102.1 N·m vs matched BEM case D +90.4 N·m, within 13 %). Requires `sharp-vawt-lab` cloned alongside (`SHARP_VAWT_LAB` env var or sibling clone). |
+| **How to reproduce the main result** | `python3 scripts/compare_with_bem.py 1.0 4 stall` → matched stalled case at TSR = 1 (FSI torque +102.1 N·m vs matched BEM case D +90.4 N·m, within 13 %). Requires `sharp-vawt-lab` cloned alongside (`SHARP_VAWT_LAB` env var or sibling clone). |
 | **What must I never claim from this code?** | See the “Do not claim” section below. In short: no experimental validation, no real turbine performance, no BEM validation-by-agreement, no counter-rotating gain predictions, no deep-stall quantitative reliability, no converged result without showing the convergence study. |
 
 ## 2. Requirements and how to run
@@ -26,18 +26,18 @@ no Numba, no AVX-dependent wheels — pure NumPy, vectorised. Developed and test
 AMD A8-6600K (4 threads, 8 GB DDR3). Invoke as `python3`.
 
 ```bash
-python3 ref_solver.py                          # where the reference solver was found
-python3 verify_solver.py                       # 54-check verification suite (F1-F19), ~8 min
-python3 run_validation.py                      # single matched TSR=1 run (canonical config)
-python3 run_validation.py 4 0.005 3.0 stall    # 4 revs, dt=5 ms, TSR=3, stall ON
-python3 compare_with_bem.py 1.0 4 potential    # head-to-head vs sharp-vawt-lab, TSR=1
-python3 compare_with_bem.py 1.0 4 stall        # same, stall layer ON
-python3 compare_with_bem.py 3.0 4 stall        # design TSR=3, stall layer ON
+python3 scripts/ref_solver.py                          # where the reference solver was found
+python3 scripts/verify_solver.py                       # 54-check verification suite (F1-F19), ~8 min
+python3 scripts/run_validation.py                      # single matched TSR=1 run (canonical config)
+python3 scripts/run_validation.py 4 0.005 3.0 stall    # 4 revs, dt=5 ms, TSR=3, stall ON
+python3 scripts/compare_with_bem.py 1.0 4 potential    # head-to-head vs sharp-vawt-lab, TSR=1
+python3 scripts/compare_with_bem.py 1.0 4 stall        # same, stall layer ON
+python3 scripts/compare_with_bem.py 3.0 4 stall        # design TSR=3, stall layer ON
 python3 scripts/convergence_study.py           # full numerical sensitivity study (~30-40 min)
 python3 scripts/convergence_study.py --quick   # fast smoke run (~2 min)
-python3 design_study.py both stall 2.0         # TSR sweep + counterweight map
-python3 pitch_moment_check.py 1.0 stall        # pitch-axis moment diagnostic vs BEM
-python3 moment_model_check.py                  # separated-moment model comparison
+python3 scripts/design_study.py both stall 2.0         # TSR sweep + counterweight map
+python3 scripts/pitch_moment_check.py 1.0 stall        # pitch-axis moment diagnostic vs BEM
+python3 scripts/moment_model_check.py                  # separated-moment model comparison
 ```
 
 Command-line arguments are positional and documented in each file's docstring.
@@ -46,12 +46,12 @@ Output files are tagged with the TSR and aero model so runs never overwrite each
 ## 3. External dependency (cross-check only)
 
 The FSI suite itself is self-contained and runs without anything else. But the
-head-to-head comparison (`compare_with_bem.py`), the optional tabulated NACA 0012
+head-to-head comparison (`scripts/compare_with_bem.py`), the optional tabulated NACA 0012
 polar, and check F10 need the independent BEM solver
 [`sharp-vawt-lab`](https://github.com/juroc58/sharp-vawt-lab) — **not vendored here**.
 Clone it and point `SHARP_VAWT_LAB` at the clone root, or clone it as a sibling
-directory called `sharp-vawt-lab`; `ref_solver.py` resolves and prints every path it
-tried. `verify_solver.py` skips F10 gracefully when the reference is absent; everything
+directory called `sharp-vawt-lab`; `scripts/ref_solver.py` resolves and prints every path it
+tried. `scripts/verify_solver.py` skips F10 gracefully when the reference is absent; everything
 else runs without it.
 
 ## 4. Verification / cross-check / validation — precise terminology
@@ -95,13 +95,13 @@ Do not claim any of the following from this code:
 | `structural_solver.py` | `CPPCParams`, `CPPCStructural` — 1-DOF rocking-pitch CPPC, counterweight, stops |
 | `fsi_main.py` | `FSICoupler` — partitioned two-way coupling, history recording |
 | `aero_correction.py` | `StaticPolar`, `StallModel` — Viterna polar + Beddoes–Leishman-style stall layer |
-| `ref_solver.py` | Locates the `sharp-vawt-lab` clone (no machine-specific paths) |
-| `verify_solver.py` | Verification suite F1–F19 + figures |
-| `compare_with_bem.py` | Four-case head-to-head cross-check vs `sharp-vawt-lab` |
-| `run_validation.py` | Single coupled run + figures (a run, **not** a validation) |
-| `design_study.py` | TSR sweep + counterweight map (scenario model) |
-| `pitch_moment_check.py` | Pitch-axis moment diagnostic vs BEM |
-| `moment_model_check.py` | Separated-moment model comparison |
+| `scripts/ref_solver.py` | Locates the `sharp-vawt-lab` clone (no machine-specific paths) |
+| `scripts/verify_solver.py` | Verification suite F1–F19 + figures |
+| `scripts/compare_with_bem.py` | Four-case head-to-head cross-check vs `sharp-vawt-lab` |
+| `scripts/run_validation.py` | Single coupled run + figures (a run, **not** a validation) |
+| `scripts/design_study.py` | TSR sweep + counterweight map (scenario model) |
+| `scripts/pitch_moment_check.py` | Pitch-axis moment diagnostic vs BEM |
+| `scripts/moment_model_check.py` | Separated-moment model comparison |
 | `scripts/convergence_study.py` | Numerical sensitivity study (CSV/JSON + plots) |
 | `AUDIT_PLAN.md` | Senior-reviewer audit plan (local, not committed) |
 

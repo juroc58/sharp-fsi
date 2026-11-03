@@ -2,8 +2,15 @@
 
 Status: **current** (supersedes the earlier draft that predated the stall layer,
 the wake-multiresolution scheme and the case-D matched-stall comparison).
-Verification of the FSI side: `verify_solver.py` — **54/54 checks pass (F1–F19)**.
-See `README.md` for the full model description and `verify_log.txt` for the run.
+Verification of the FSI side: `scripts/verify_solver.py` — **54/54 checks pass (F1–F19)**.
+Cross-check vs `sharp-vawt-lab`: this report. See `README.md` for the full model
+description and `verify_log.txt` for the run.
+
+**Terminology used in this report.** “Verification” = internal numerical checks
+(F1–F19). “Cross-check” = comparison against `sharp-vawt-lab` (the two codes share
+geometry, mass properties and the pitch equation, so this is **not** independent
+validation). “Validation” = comparison against independent measured data — **none
+exists for this project**.
 
 ---
 
@@ -90,7 +97,7 @@ convention differs between the codes (§6). Torque is therefore only a meaningfu
 cross-code metric once the stall layer is on and the counterweight is trimmed, i.e.
 from §4 onwards. Read §3 as a numerical + kinematic consistency check (a strong
 one: two independent codes, identical pitch/α histories, 1e-13 circulation budget,
-0.8 % attached-flow lift agreement), not as a torque validation at TSR = 3.
+0.8 % attached-flow lift agreement), not as a torque cross-check at TSR = 3.
 
 ## 4. Results — TSR = 1 with the stall layer ON
 
@@ -171,7 +178,7 @@ oscillation is systematically **~60–75 % of the BEM's** (TSR = 1: FSI ψ ∈
 [−25.5, +14.5] vs BEM D [−27.0, +26.1], 75 %; TSR = 3: FSI [−25.6, −5.1] vs BEM D
 [−27.9, +7.0], 59 %).
 
-`pitch_moment_check.py` resolves it. The BEM does not output its aerodynamic
+`scripts/pitch_moment_check.py` resolves it. The BEM does not output its aerodynamic
 pitch moment, but both codes integrate the *same* rocking-pitch equation
 (this is verified in F6/F7, and both codes print identical `M`, `ξ_g`, `ar_len`,
 `Rp`, `I_p`, `ψ_eq`, `k_s`):
@@ -184,7 +191,7 @@ Q_cent = M ω² Rp (−ξ_g cos ψ − ar_len sin ψ)
 
 so the BEM's pitch moment is reconstructed by inverting its own recorded
 `ψ(t)`, `ψ̇(t)` (exact `ψ̇` from the BEM's `psd` column, one numerical
-differentiation for `ψ̈`). The procedure is validated **on the FSI itself**:
+differentiation for `ψ̈`). The procedure is verified **on the FSI itself**:
 inverting the FSI's recorded `ψ`, `ψ̇` reproduces its recorded `Q_aero`
 (`−Mz_pivot`) to **≈2–3 % of the peak-to-peak amplitude** — that error,
 concentrated at the stop-engagement kinks, is the uncertainty band.
@@ -220,9 +227,9 @@ Cycle-mean pitch moment binned against the effective α (last revolution, N·m):
    (TSR = 1: 133 → 31 N·m for the BEM, 118 → 12 N·m for the FSI) and, crucially,
    **both codes produce the same monotonic dependence of the cycle-mean moment on
    α**, within a factor ≈ 2 at every bin. The FSI's stall-layer moment model is
-   therefore qualitatively validated.
+   therefore qualitatively consistent with the BEM's.
 3. **The residual is a separated-flow model difference in which the FSI has the
-   better physics.** `moment_model_check.py` compares the two separated-moment
+   better physics.** `scripts/moment_model_check.py` compares the two separated-moment
    models in closed form (case D feeds the BEM the FSI's *own* polar, and both
    codes use the identical `_fstat` separation closure, so this is a clean
    model-to-model comparison):
@@ -247,7 +254,7 @@ Cycle-mean pitch moment binned against the effective α (last revolution, N·m):
    −0.495. Applying the same cp shift to the normal force rather than the lift
    reproduces that limit.
 
-   The FSI's *end-to-end* load integration is validated too: binning the recorded
+   The FSI's *end-to-end* load integration is checked too: binning the recorded
    `Cm` from a stalled run against the signed effective α reproduces the
    prescribed polar to a **mean |ΔCm| of 0.034 on a peak of 0.470 (7 %)** across
    every populated α bin:
@@ -260,9 +267,9 @@ Cycle-mean pitch moment binned against the effective α (last revolution, N·m):
    The residual 7 % is dynamic-stall lag plus the unsteady load terms, as it
    should be.
 
-   (`moment_model_check.py` also writes the table and figure above to
+   (`scripts/moment_model_check.py` also writes the table and figure above to
    `moment_model_log.txt` / `moment_model_check.png`; run it on a stalled history,
-   e.g. `python3 moment_model_check.py fsi_history_bem_stall_tsr1p00.txt`.)
+   e.g. `python3 scripts/moment_model_check.py fsi_history_bem_stall_tsr1p00.txt`.)
 
 Consequently **the pitch-amplitude difference is a separated-flow modelling
 difference in which the FSI's formulation is the more defensible one** (it
@@ -314,7 +321,7 @@ missing 3-D losses (which grow with TSR) are what would produce a finite optimum
 
 ## 8. Verification status of the FSI side
 
-`verify_solver.py` → **54/54 pass** (`verify_log.txt`, figures `verify_*.png`).
+`scripts/verify_solver.py` → **54/54 pass** (`verify_log.txt`, figures `verify_*.png`).
 Highlights most relevant to this comparison:
 
 * F10: kinematics vs the BEM kernel, max‖Δα‖ = 4.0e-12°
@@ -339,7 +346,7 @@ Highlights most relevant to this comparison:
   moment break (−0.026 in the pitch ramp, arm capped at the static cp range) that
   vanishes in the steady state, so the exact polar reproduction is preserved
 
-Beyond the 54 checks, `moment_model_check.py` closes the comparison loop on the
+Beyond the 54 checks, `scripts/moment_model_check.py` closes the comparison loop on the
 load model itself: the FSI's separated-moment construction is verified to be the
 exact "normal force at `cp_sep = 0.5c`" cp shift (mean |ΔCm| = 0.0000 vs that
 construction over 0–90°, and −0.495 at α = 90°, the exact flat-plate value), and
@@ -353,18 +360,18 @@ across all populated α bins.
 # vendored here.  Clone it (a sibling directory called sharp-vawt-lab is found
 # automatically) or point SHARP_VAWT_LAB at an existing clone:
 git clone https://github.com/juroc58/sharp-vawt-lab
-python3 ref_solver.py                           # prints the clone it resolved
+python3 scripts/ref_solver.py                           # prints the clone it resolved
 
-python3 verify_solver.py                        > verify_log.txt
-python3 compare_with_bem.py 1.0 4 potential     > compare_log_tsr1.txt
-python3 compare_with_bem.py 1.0 4 stall         > compare_log_tsr1_stall.txt
-python3 compare_with_bem.py 3.0 4 stall         > compare_log_tsr3_stall.txt
-python3 compare_with_bem.py 3.0 4 potential     > compare_log_tsr3.txt
-python3 run_validation.py 4 0.005 3.0 stall     > validation_log_tsr3_stall.txt
-python3 design_study.py both stall 2.0          > design_log.txt
-python3 pitch_moment_check.py 1.0 stall         > pitch_moment_log_tsr1.txt
-python3 pitch_moment_check.py 3.0 stall         > pitch_moment_log_tsr3.txt
-python3 moment_model_check.py fsi_history_bem_stall_tsr1p00.txt
+python3 scripts/verify_solver.py                        > verify_log.txt
+python3 scripts/compare_with_bem.py 1.0 4 potential     > compare_log_tsr1.txt
+python3 scripts/compare_with_bem.py 1.0 4 stall         > compare_log_tsr1_stall.txt
+python3 scripts/compare_with_bem.py 3.0 4 stall         > compare_log_tsr3_stall.txt
+python3 scripts/compare_with_bem.py 3.0 4 potential     > compare_log_tsr3.txt
+python3 scripts/run_validation.py 4 0.005 3.0 stall     > validation_log_tsr3_stall.txt
+python3 scripts/design_study.py both stall 2.0          > design_log.txt
+python3 scripts/pitch_moment_check.py 1.0 stall         > pitch_moment_log_tsr1.txt
+python3 scripts/pitch_moment_check.py 3.0 stall         > pitch_moment_log_tsr3.txt
+python3 scripts/moment_model_check.py fsi_history_bem_stall_tsr1p00.txt
 ```
 
 ## 10. BEM interface notes (for anyone re-running this)
@@ -385,4 +392,4 @@ python3 moment_model_check.py fsi_history_bem_stall_tsr1p00.txt
   `_fstat` separation parameter, and it is applied to the **lift**. In deep stall
   that loses the moment (`Cl → 0` at α = 90° ⟹ `Cm → 0`, whereas a flat plate has
   `Cm(¼c) = −0.5`). Applying the same shift to the normal force instead would bring
-  it into line with the FSI — see `moment_model_check.py` and §6.
+  it into line with the FSI — see `scripts/moment_model_check.py` and §6.

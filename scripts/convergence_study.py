@@ -47,7 +47,7 @@ import json
 import os
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 import numpy as np
 
@@ -61,9 +61,9 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from run_validation import CONFIG, aero_config
 
 from fsi_main import FSICoupler
-from run_validation import CONFIG, aero_config
 
 TWO_PI = 2.0 * np.pi
 
@@ -359,7 +359,7 @@ def main():
     os.makedirs(out_dir, exist_ok=True)
     results = {
         "metadata": {
-            "created": datetime.now(timezone.utc).isoformat() + "Z",
+            "created": datetime.now(UTC).isoformat() + "Z",
             "n_rev": n_rev,
             "quick": quick,
             "baseline": BASELINE,
