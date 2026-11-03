@@ -61,7 +61,7 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from run_validation import CONFIG, aero_config
+from run_crosscheck import CONFIG, aero_config
 
 from fsi_main import FSICoupler
 

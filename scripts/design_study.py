@@ -39,7 +39,7 @@ import matplotlib.pyplot as plt
 sys.path.insert(0, str(Path(__file__).resolve().parent))       # scripts/
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))  # repo root
 
-from run_validation import CONFIG, aero_config
+from run_crosscheck import CONFIG, aero_config
 
 from fsi_main import FSICoupler
 

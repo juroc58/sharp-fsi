@@ -9,7 +9,7 @@ description and `verify_log.txt` for the run.
 **Terminology used in this report.** “Verification” = internal numerical checks
 (F1–F19). “Cross-check” = comparison against `sharp-vawt-lab` (the two codes share
 geometry, mass properties and the pitch equation, so this is **not** independent
-validation). “Validation” = comparison against independent measured data — **none
+validation). “Validation” = comparison against independent measured data — **no measured data**
 exists for this project**.
 
 ---
@@ -367,7 +367,7 @@ python3 scripts/compare_with_bem.py 1.0 4 potential     > compare_log_tsr1.txt
 python3 scripts/compare_with_bem.py 1.0 4 stall         > compare_log_tsr1_stall.txt
 python3 scripts/compare_with_bem.py 3.0 4 stall         > compare_log_tsr3_stall.txt
 python3 scripts/compare_with_bem.py 3.0 4 potential     > compare_log_tsr3.txt
-python3 scripts/run_validation.py 4 0.005 3.0 stall     > validation_log_tsr3_stall.txt
+python3 scripts/run_crosscheck.py 4 0.005 3.0 stall     > crosscheck_log_tsr3_stall.txt
 python3 scripts/design_study.py both stall 2.0          > design_log.txt
 python3 scripts/pitch_moment_check.py 1.0 stall         > pitch_moment_log_tsr1.txt
 python3 scripts/pitch_moment_check.py 3.0 stall         > pitch_moment_log_tsr3.txt

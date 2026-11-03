@@ -72,7 +72,7 @@ unchanged wherever the flow is attached.  The extra drag is applied at the
 quarter chord and the separated pitching moment as a pure couple.  See
 ``aero_correction.py`` for the model and ``verify_solver.py`` F11-F14.
 
-Numerical validation of all of the above is in verify_solver.py (static polar,
+Numerical verification of all of the above is in scripts/verify_solver.py (static polar,
 d'Alembert drag, quarter-chord moment, pivot-shift law, Wagner impulsive start,
 panel/timestep convergence, Kelvin budget).
 

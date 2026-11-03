@@ -1,10 +1,15 @@
 """Pytest wrappers for sharpFSI verification checks (F1-F19).
 
-Each check_* function in verify_solver.py becomes one pytest test.
+Each check_* function in scripts/verify_solver.py becomes one pytest test.
 """
 from __future__ import annotations
 
+import sys
+from pathlib import Path
+
 import pytest
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "scripts"))
 
 import verify_solver
 

@@ -1,16 +1,16 @@
 """
-run_validation.py
+run_crosscheck.py
 =================
-Validation run for the 2D VAWT FSI suite: a number of rotor revolutions of the
+Cross-check run for the 2D VAWT FSI suite: a number of rotor revolutions of the
 matched config (R=5 m, c=1 m, U=10 m/s, TSR=1), saving the time history and
-producing the two validation figures:
+producing the two cross-check figures:
 
-  fsi_validation_plots.png :
+  fsi_crosscheck_plots.png :
       left  - phase portrait  (pitch psi vs azimuth phi)
       right - aerodynamic hysteresis (Cl vs effective alpha)
   fsi_time_history.png     - pitch / alpha / coefficients / moment histories
 
-Usage:  python3 run_validation.py [n_rev] [dt] [tsr] [aero]
+Usage:  python3 run_crosscheck.py [n_rev] [dt] [tsr] [aero]
 
   n_rev : rotor revolutions                     (default 4)
   dt    : time step, s                          (default 0.005)
@@ -23,6 +23,9 @@ Usage:  python3 run_validation.py [n_rev] [dt] [tsr] [aero]
             naca       + dynamic stall on a tabulated NACA 0012 polar
                        (needs the Sheldahl-Klimas CSV; see
                        StaticPolar.naca0012)
+
+This script performs a model-class cross-check against sharp-vawt-lab.
+It is not validation: no independent measured data exist.
 
 Output file names are tagged with the TSR and the aero model when they differ
 from the defaults, so runs never overwrite each other.
@@ -72,7 +75,7 @@ def aero_config(name='potential'):
                      "(use potential | stall | naca)")
 
 
-def run_validation(n_rev=4.0, dt=None, tsr=None, aero='potential'):
+def run_crosscheck(n_rev=4.0, dt=None, tsr=None, aero='potential'):
     cfg = dict(CONFIG)
     if dt is not None:
         cfg['dt'] = dt
@@ -88,7 +91,7 @@ def run_validation(n_rev=4.0, dt=None, tsr=None, aero='potential'):
     if akey != 'potential':
         tag += f"_{akey}"
     print("=" * 66)
-    print("2D VAWT FSI validation run")
+    print("2D VAWT FSI cross-check run")
     print("=" * 66)
     for k in ('chord', 'R', 'omega', 'U_inf', 'dt', 'n_panels', 'wake_cap',
               'm_blade', 'm_cw', 'r_cw', 'win_deg'):
@@ -101,7 +104,7 @@ def run_validation(n_rev=4.0, dt=None, tsr=None, aero='potential'):
     print(f"  I_p          = {fsi.struct.p.I_p:.4f} kg m^2")
     print("-" * 66)
     h = fsi.run(n_revolutions=n_rev, verbose=True)
-    fsi.save_history(f'fsi_validation_history{tag}.txt')
+    fsi.save_history(f'fsi_crosscheck_history{tag}.txt')
     return fsi, h, tag, akey
 
 
@@ -152,7 +155,7 @@ def summarize(fsi, h, akey='potential'):
     print(f"  Kelvin budget = {fsi.fluid.circulation_budget():.2e}")
 
 
-def make_validation_figure(fsi, h, tag='', akey='potential'):
+def make_crosscheck_figure(fsi, h, tag='', akey='potential'):
     T_rev = 2 * np.pi / fsi.omega
     t = h['t']
     np.rad2deg(h['phi'])
@@ -201,14 +204,14 @@ def make_validation_figure(fsi, h, tag='', akey='potential'):
     ax.grid(alpha=0.3)
     ax.set_xlim(-100, 100)
 
-    fig.suptitle(f'2D VAWT FSI validation: {n_rev} revolutions, '
+    fig.suptitle(f'2D VAWT FSI cross-check: {n_rev} revolutions, '
                  f'TSR = {fsi.omega*fsi.R/fsi.U_inf:.2f} '
                  f'(DVM + CPPC, aero = {akey})',
                  fontsize=14)
     fig.tight_layout()
-    fig.savefig(f'fsi_validation_plots{tag}.png', dpi=160)
+    fig.savefig(f'fsi_crosscheck_plots{tag}.png', dpi=160)
     plt.close(fig)
-    print(f"saved fsi_validation_plots{tag}.png")
+    print(f"saved fsi_crosscheck_plots{tag}.png")
 
 
 def make_history_figure(fsi, h, tag=''):
@@ -276,9 +279,9 @@ def main():
     dt = float(sys.argv[2]) if len(sys.argv) > 2 else None
     tsr = float(sys.argv[3]) if len(sys.argv) > 3 else None
     aero = sys.argv[4] if len(sys.argv) > 4 else 'potential'
-    fsi, h, tag, akey = run_validation(n_rev, dt, tsr, aero)
+    fsi, h, tag, akey = run_crosscheck(n_rev, dt, tsr, aero)
     summarize(fsi, h, akey)
-    make_validation_figure(fsi, h, tag, akey)
+    make_crosscheck_figure(fsi, h, tag, akey)
     make_history_figure(fsi, h, tag)
 
 

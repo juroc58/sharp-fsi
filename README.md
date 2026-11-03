@@ -2,8 +2,7 @@
 
 `sharpFSI` is a from-scratch, dependency-light fluid–structure-interaction code for a
 **single cycloturbine (variable-pitch VAWT) blade section**. It is a cross-check
-artefact for the independent BEM solver `sharp-vawt-lab` — not an independent
-validation, and not a design tool for real turbines.
+artefact for the independent BEM solver `sharp-vawt-lab` — not validation, and not a design tool for real turbines.
 
 ## 1. What this code does (first screen)
 
@@ -12,12 +11,12 @@ validation, and not a design tool for real turbines.
 | **What does it simulate?** | One 2-D blade section of a passive variable-pitch (CPPC) cycloturbine in incompressible flow. The fluid is an unsteady discrete-vortex method (DVM) with a free wake; the structure is a 1-DOF rocking-pitch CPPC model with elastic stops; the two are coupled two-way per time step. |
 | **What is verified?** | Internal numerical behaviour: 54 checks (F1–F19) covering static lift `Cl = 2π sin α`, d'Alembert drag, quarter-chord moment, Wagner impulsive start, panel/timestep convergence, structural frequency, pitch-stop law, coupled Kelvin circulation budget (~1e-13), added-mass term, stall-layer transparency in attached flow, static-polar reproduction, dynamic-stall hysteresis, multiresolution wake conservation, dead-point coefficient flooring, and leading-edge-vortex moment. Run `python3 scripts/verify_solver.py`. |
 | **What is cross-checked?** | Against the separate BEM/CPPC solver `sharp-vawt-lab` (`juroc58/sharp-vawt-lab`, `vawt_core.py`). The two codes share geometry, mass properties and the pitch equation — so agreement is a **cross-check**, not independent validation. Four progressively better-matched BEM aero models are compared at matched TSR = 1 and design TSR = 3. Run `python3 scripts/compare_with_bem.py`. |
-| **What is NOT validated?** | **Nothing.** There is no comparison against independent measured data (wind-tunnel, prototype, flight). Dynamic-stall absolute loads are indicative, not predictive. Do not claim experimental validation. |
+| **What is not validation?** | **Nothing.** There is no comparison against independent measured data (wind-tunnel, prototype, flight). Dynamic-stall absolute loads are indicative, not predictive. Do not claim validation: no measured data. |
 | **Main numerical limitations** | 2-D single section only (no blade thickness, no tip loss, no induction, no 3-D losses); residual potential drag is a finite-wake effect `Cd ≈ K·Cl² ∝ 1/L_wake`; deep-stall load replacement beyond ~85–95° is semi-empirical and uncalibrated; coefficients are meaningless at the zero-relative-wind dead point (`|W| → 0`, floored at `coeff_W_min`, flagged by `coeff_valid`). |
 | **Production defaults** | `n_panels=32`, `dt=0.005 s`, `wake_cap=600`, `wake_substeps=1`, `n_coupling_iter=3`, `coupling_tol=1e-4`, `relax=0.7`, stall layer ON (Viterna polar, `T_f=3`, `T_v=6`, `K_v=0.7`, vortex moment ON, blend_state OFF), `coeff_W_min=2.0 m/s`. See `scripts/convergence_study.py` for the sensitivity evidence behind these values. |
 | **dt sensitivity** | Design-point Cp at TSR ≈ 3 is dt-sensitive: halving dt from 5 ms to 2.5 ms changes Cp by ~5 %. Use `dt = 2.5 ms` for quantitative design-point work; `dt = 5 ms` is adequate away from stall onset. |
 | **How to reproduce the main result** | `python3 scripts/compare_with_bem.py 1.0 4 stall` → matched stalled case at TSR = 1 (FSI torque +102.1 N·m vs matched BEM case D +90.4 N·m, within 13 %). Requires `sharp-vawt-lab` cloned alongside (`SHARP_VAWT_LAB` env var or sibling clone). |
-| **What must I never claim from this code?** | See the “Do not claim” section below. In short: no experimental validation, no real turbine performance, no BEM validation-by-agreement, no counter-rotating gain predictions, no deep-stall quantitative reliability, no converged result without showing the convergence study. |
+| **What must I never claim from this code?** | See the “Do not claim” section below. In short: not validation, no real turbine performance, no BEM validation-by-agreement, no counter-rotating gain predictions, no deep-stall quantitative reliability, no converged result without showing the convergence study. |
 
 ## 2. Requirements and how to run
 
@@ -28,8 +27,8 @@ AMD A8-6600K (4 threads, 8 GB DDR3). Invoke as `python3`.
 ```bash
 python3 scripts/ref_solver.py                          # where the reference solver was found
 python3 scripts/verify_solver.py                       # 54-check verification suite (F1-F19), ~8 min
-python3 scripts/run_validation.py                      # single matched TSR=1 run (canonical config)
-python3 scripts/run_validation.py 4 0.005 3.0 stall    # 4 revs, dt=5 ms, TSR=3, stall ON
+python3 scripts/run_crosscheck.py                      # single matched TSR=1 run (canonical config)
+python3 scripts/run_crosscheck.py 4 0.005 3.0 stall    # 4 revs, dt=5 ms, TSR=3, stall ON
 python3 scripts/compare_with_bem.py 1.0 4 potential    # head-to-head vs sharp-vawt-lab, TSR=1
 python3 scripts/compare_with_bem.py 1.0 4 stall        # same, stall layer ON
 python3 scripts/compare_with_bem.py 3.0 4 stall        # design TSR=3, stall layer ON
@@ -62,7 +61,7 @@ This project is careful to distinguish three things that are often conflated:
 |---|---|---|
 | **Verification** | Internal mathematical/numerical checks against analytical benchmarks (F1–F19) | 54/54 pass |
 | **Cross-check** | Comparison against the independent BEM solver `sharp-vawt-lab` (same geometry/mass/pitch — so **not** independent) | Matched potential: kinematics to 4e-12°, torque within 13 %; matched stall: torque within 13 % at TSR = 1, 5 % vs real-aero case at TSR = 3 |
-| **Validation** | Comparison against independent **measured** data | **None — not yet available** |
+| **Validation** | Comparison against independent measured data | **no measured data — not yet available** |
 
 The directory contains no experimental data, no wind-tunnel measurements, and no
 prototype results. All performance numbers (Cp, torque, pitch) are outputs of
@@ -72,18 +71,18 @@ numerical models, not measurements.
 
 Do not claim any of the following from this code:
 
-* **Experimental validation.** There is no independent measured data.
+* **Experimental validation: no measured data.** There is no independent measured data.
 * **Real turbine performance.** This is a 2-D, per-unit-span, single-section model
   with no tip loss, no finite aspect ratio, no 3-D losses. High 2-D Cp values
   (e.g. +0.504 at TSR = 4 in the design study) are upper bounds / scenario-model
   outputs, not predictions of a real rotor.
-* **BEM validation by agreement.** Agreement between this DVM and `sharp-vawt-lab`
+* **BEM validation by agreement: no measured data.** Agreement between this DVM and `sharp-vawt-lab`
   is a cross-check; both codes share geometry, mass properties and the pitch
   equation, so they are not independent.
 * **Counter-rotating gains as predictions.** Any such figure would be a scenario
   model, not a prediction.
 * **Deep-stall quantitative reliability.** The dynamic-stall layer is
-  semi-empirical, uncalibrated, and unvalidated against dynamic-stall data.
+  semi-empirical, uncalibrated, not validation: no measured data.
 * **A result is converged** without showing the convergence study
   (`scripts/convergence_study.py`).
 
@@ -98,7 +97,7 @@ Do not claim any of the following from this code:
 | `scripts/ref_solver.py` | Locates the `sharp-vawt-lab` clone (no machine-specific paths) |
 | `scripts/verify_solver.py` | Verification suite F1–F19 + figures |
 | `scripts/compare_with_bem.py` | Four-case head-to-head cross-check vs `sharp-vawt-lab` |
-| `scripts/run_validation.py` | Single coupled run + figures (a run, **not** a validation) |
+| `scripts/run_crosscheck.py` | Single coupled run + figures (a run, **not validation**) |
 | `scripts/design_study.py` | TSR sweep + counterweight map (scenario model) |
 | `scripts/pitch_moment_check.py` | Pitch-axis moment diagnostic vs BEM |
 | `scripts/moment_model_check.py` | Separated-moment model comparison |

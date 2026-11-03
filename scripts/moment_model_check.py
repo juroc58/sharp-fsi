@@ -27,7 +27,7 @@ validates the load integration end to end (the recorded moment should reproduce
 the polar in quasi-steady separated flow).  For that part the history must come
 from a run with the **stall layer on** — a potential run reports the DVM's own
 ~zero Cm.  Without an argument the script picks a stall history if one is
-present (`fsi_history_bem_stall_tsr1p00.txt`), else the validation history.
+present (`fsi_history_bem_stall_tsr1p00.txt`), else the crosscheck history.
 
 Usage:  python3 moment_model_check.py [history_file]
 """
@@ -74,13 +74,13 @@ def main():
         # layer is active (a potential run reports the DVM's own ~zero Cm)
         for cand in ('fsi_history_bem_stall_tsr1p00.txt',
                      'fsi_history_bem_potential_tsr1p00.txt',
-                     'fsi_validation_history_tsr3p00_stall.txt',
-                     'fsi_validation_history.txt'):
+                     'fsi_crosscheck_history_tsr3p00_stall.txt',
+                     'fsi_crosscheck_history.txt'):
             if os.path.exists(cand):
                 hist = cand
                 break
         else:
-            hist = 'fsi_validation_history.txt'
+            hist = 'fsi_crosscheck_history.txt'
     pol = StaticPolar.viterna(alpha_stall=14.0, cd0=8.0e-3)
     a = pol.alpha
     ad = np.degrees(a)

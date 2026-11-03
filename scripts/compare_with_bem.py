@@ -47,7 +47,7 @@ The FSI aerodynamic model is selected on the command line; the BEM cases are
 always all run so every comparison is available.
 
 Usage:  python3 compare_with_bem.py [tsr] [n_rev] [aero]
-        aero = potential | stall | naca   (see run_validation.py)
+        aero = potential | stall | naca   (see run_crosscheck.py)
 """
 
 from __future__ import annotations
@@ -71,7 +71,7 @@ if REF_ROOT is None:
 if REF_ROOT not in sys.path:
     sys.path.insert(0, REF_ROOT)
 
-from run_validation import CONFIG, aero_config
+from run_crosscheck import CONFIG, aero_config
 from vawt_core import (
     AeroConfig,
     CycloturbineSim,

@@ -19,7 +19,7 @@ BEM's aerodynamic pitch moment can be reconstructed by inversion:
 
     Q_aero = I_p psidd - Q_cent(psi) + c_b psid - Q_stop(psi, psid)
 
-The reconstruction is validated *on the FSI itself*: inverting the FSI's own
+The reconstruction is checked *on the FSI itself*: inverting the FSI's own
 recorded psi(t)/psid(t) and comparing with its recorded Q_aero isolates the error
 of the numerical differentiation alone.  That error is then the uncertainty band
 on the reconstructed BEM moment.
@@ -52,7 +52,7 @@ from compare_with_bem import (
     run_fsi,
     wrap_deg,
 )
-from run_validation import CONFIG, aero_config
+from run_crosscheck import CONFIG, aero_config
 
 from structural_solver import CPPCParams
 

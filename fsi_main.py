@@ -359,7 +359,7 @@ class FSICoupler:
         return {name: getattr(self, 'h_' + name)[:n].copy()
                 for name in self.HIST_KEYS}
 
-    def save_history(self, path='fsi_validation_history.txt'):
+    def save_history(self, path='fsi_crosscheck_history.txt'):
         h = self.history()
         cols = list(self.HIST_KEYS)
         header = ' '.join(cols)
