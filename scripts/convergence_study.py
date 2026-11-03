@@ -31,8 +31,8 @@ Outputs (in --out-dir, default `convergence_study/`):
     convergence_summary.png        max |Delta Cp| vs baseline per parameter/TSR
 
 The baseline configuration (documented production values) is:
-    n_panels=32, dt=0.005 s, wake_cap=600, wake_substeps=1,
-    n_coupling_iter=3, coupling_tol=1e-4, relax=0.7, stall=on,
+    n_panels=48, dt=0.005 s, wake_cap=600, wake_substeps=1,
+    n_coupling_iter=5, coupling_tol=1e-4, relax=0.7, stall=on,
     vortex_moment=on, stall_blend_state=False.
 
 Rationale for the baseline is given in the convergence recommendation table in
@@ -71,11 +71,11 @@ TWO_PI = 2.0 * np.pi
 # Baseline (documented production defaults)
 # ---------------------------------------------------------------------------
 BASELINE = {
-    "n_panels": 32,
+    "n_panels": 48,
     "dt": 0.005,
     "wake_cap": 600,
     "wake_substeps": 1,
-    "n_coupling_iter": 3,
+    "n_coupling_iter": 5,
     "coupling_tol": 1e-4,
     "relax": 0.7,
     "stall": True,

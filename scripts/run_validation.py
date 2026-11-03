@@ -49,9 +49,9 @@ CONFIG = {
     'dt': 0.005, 'induction': 0.0,
     'm_blade': 5.0, 'cg_blade': 0.25, 'm_cw': 2.5, 'r_cw': 0.35,
     'c_b': 0.15, 'mu_c': 0.0, 'win_deg': 25.0, 'wstop': 50.0, 'psi0_deg': 5.0,
-    'n_panels': 32, 'wake_cap': 600, 'core_bound': 0.002, 'core_wake': 0.02,
+    'n_panels': 48, 'wake_cap': 600, 'core_bound': 0.002, 'core_wake': 0.02,
     'wake_substeps': 1, 'viscous_cd0': 0.0,
-    'n_coupling_iter': 3, 'coupling_tol': 1e-4, 'relax': 0.7,
+    'n_coupling_iter': 5, 'coupling_tol': 1e-4, 'relax': 0.7,
 }
 
 
