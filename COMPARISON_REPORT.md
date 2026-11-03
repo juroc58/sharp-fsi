@@ -393,3 +393,13 @@ python3 scripts/moment_model_check.py fsi_history_bem_stall_tsr1p00.txt
   that loses the moment (`Cl → 0` at α = 90° ⟹ `Cm → 0`, whereas a flat plate has
   `Cm(¼c) = −0.5`). Applying the same shift to the normal force instead would bring
   it into line with the FSI — see `scripts/moment_model_check.py` and §6.
+* Machine-readable comparison metrics are emitted as
+  `comparison_metrics_{tag}.json` (one per comparison run), containing per-case
+  Cp/torque and relative differences plus summary RMSE/mean values.  Reference
+  them when tracking the residual 13 % torque difference between FSI and the
+  matched BEM case at TSR = 1.  Candidate explanations for that residual (not a
+  fitted correction): (i) the FSI's free wake captures induction that the BEM
+  omits, (ii) the apparent-mass term in the DVM vs the BEM's Theodorsen
+  correction, (iii) wake truncation in the DVM (`Cd ≈ K·Cl² ∝ 1/L_wake`, F17),
+  (iv) under-relaxation damping in the partitioned FSI coupling, and (v) the
+  BEM's separated-moment variant (shift applied to `Cl` vs `Cn`, §6).

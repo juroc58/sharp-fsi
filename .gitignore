@@ -26,6 +26,7 @@ fsi_history_bem_*.txt
 !fsi_history_bem_stall_tsr1p00.txt
 fsi_validation_history*.txt
 bem_history*.txt
+comparison_metrics*.json
 
 # --- figures are generated, so ignore them by default ... ---
 *.png

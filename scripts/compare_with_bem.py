@@ -53,6 +53,7 @@ Usage:  python3 compare_with_bem.py [tsr] [n_rev] [aero]
 from __future__ import annotations
 
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import matplotlib
@@ -319,6 +320,56 @@ def main():
         if len(pb_r) == len(pf_r):
             d = pb_r - pf_r
             print(f"            azimuth-binned rms(dpsi)={np.sqrt(np.mean(d**2)):6.2f} deg")
+
+    # ------------------------------------------------------------- metrics
+    # Emit machine-readable comparison metrics for downstream tracking.
+    import json as _json
+
+    rows_metrics = []
+    cp_diffs = []
+    q_diffs = []
+    for case in ('quasi', 'unsteady', 'viterna', 'real'):
+        c = cases[case]
+        m_c = _mask_last(c['t'][:n], T_rev)
+        cp_bem = float(c['res']['cp'])
+        q_bem = float(c['torque'][m_c].mean())
+        cp_fsi = float(cpl[m].mean())
+        q_fsi = float(h_fsi['Q_rotor'][m].mean())
+        rel_d_cp = (cp_fsi - cp_bem) / cp_bem if abs(cp_bem) > 1e-12 else float('nan')
+        rel_d_q = (q_fsi - q_bem) / q_bem if abs(q_bem) > 1e-12 else float('nan')
+        rows_metrics.append({
+            'tsr': float(tsr),
+            'mode': case,
+            'cp_fsi': cp_fsi,
+            'cp_bem': cp_bem,
+            'rel_diff_cp': rel_d_cp,
+            'q_fsi': q_fsi,
+            'q_bem': q_bem,
+            'rel_diff_q': rel_d_q,
+        })
+        if not np.isnan(rel_d_cp):
+            cp_diffs.append(rel_d_cp)
+        if not np.isnan(rel_d_q):
+            q_diffs.append(rel_d_q)
+
+    metrics = {
+        'stamp': {
+            'generated_utc': datetime.now(UTC).isoformat() + 'Z',
+            'tsr': float(tsr),
+            'model': akey,
+        },
+        'rows': rows_metrics,
+        'summary': {
+            'mean_rel_diff_cp': float(np.mean(cp_diffs)) if cp_diffs else None,
+            'rmse_cp': float(np.sqrt(np.mean(np.square(cp_diffs)))) if cp_diffs else None,
+            'mean_rel_diff_q': float(np.mean(q_diffs)) if q_diffs else None,
+            'rmse_q': float(np.sqrt(np.mean(np.square(q_diffs)))) if q_diffs else None,
+        },
+    }
+    metrics_path = f'comparison_metrics{tag}.json'
+    with open(metrics_path, 'w') as fh:
+        _json.dump(metrics, fh, indent=2)
+    print(f"saved {metrics_path}")
 
     # ------------------------------------------------------------- history
     for case in ('quasi', 'unsteady', 'viterna', 'real'):
