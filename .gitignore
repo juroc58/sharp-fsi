@@ -53,3 +53,9 @@ bem_history*.txt
 .DS_Store
 Thumbs.db
 *~
+
+# --- local agent / workflow config (personal, not committed) ---
+CLAUDE.md
+opencode.json
+.opencode/
+repomix-output.xml
