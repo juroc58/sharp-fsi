@@ -84,6 +84,14 @@ Root `verify_solver.py` retained as a 5-line shim that delegates to
 
 - **Task 5.1** (extend cross-check grid to TSR = 2.0, 4.0): Deferred because `../sharp-vawt-lab` is not present. See BUGS_AND_ISSUES.md ## Deferred to human review for instructions.
 
+## Deferred to human review
+
+TSR=1 divergence is intermittent — the full study sometimes
+produces Cp=+7.67e6, sometimes a finite value, depending on the
+specific time-march trajectory. Root cause in fluid_solver.py:447
+(wake load overflow at close vortex pairs) is not addressed here.
+Do not trust TSR=1 results from this study until investigated.
+
 ## Final honest assessment
 
 | Aspect | Status |

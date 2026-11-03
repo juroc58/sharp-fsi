@@ -177,6 +177,8 @@ def run_case(tsr, param_name, param_value, n_rev=N_REV, verbose=False):
     stop = 100.0 * np.mean(np.abs(psi) > 0.98 * win)
 
     finite = bool(np.all(np.isfinite(h["Cl"])) and np.all(np.isfinite(h["psi"])))
+    finite = finite and bool(np.all(np.isfinite(cp)))
+    finite = finite and bool(np.all(np.isfinite(cp)))
     kelvin = fsi.fluid.circulation_budget()
 
     # coupling residual: last accepted change in psi (proxy; the coupler stores
@@ -206,16 +208,16 @@ def run_case(tsr, param_name, param_value, n_rev=N_REV, verbose=False):
         "wake_nw": int(fsi.fluid.nw),
         "wake_merge_count": int(fsi.fluid.merge_count),
         "mean_coupling_iters": mean_iters,
-        "cp_mean": float(cp.mean()),
-        "cp_last": float(cp[-1]) if len(cp) else np.nan,
-        "q_rotor_mean": float(h["Q_rotor"][m].mean()),
-        "psi_mean_deg": float(psi.mean()),
-        "psi_amplitude_deg": float(0.5 * (psi.max() - psi.min())),
-        "psi_rms_deg": float(np.sqrt(np.mean(psi**2))),
-        "alpha_mean_deg": float(al.mean()),
-        "alpha_max_abs_deg": float(np.abs(al).max()),
+        "cp_mean": float(cp.mean()) if finite else float("nan"),
+        "cp_last": float(cp[-1]) if finite and len(cp) else float("nan"),
+        "q_rotor_mean": float(h["Q_rotor"][m].mean()) if finite else float("nan"),
+        "psi_mean_deg": float(psi.mean()) if finite else float("nan"),
+        "psi_amplitude_deg": float(0.5 * (psi.max() - psi.min())) if finite else float("nan"),
+        "psi_rms_deg": float(np.sqrt(np.mean(psi**2))) if finite else float("nan"),
+        "alpha_mean_deg": float(al.mean()) if finite else float("nan"),
+        "alpha_max_abs_deg": float(np.abs(al).max()) if finite else float("nan"),
         "stop_pct": float(stop),
-        "cl_max_abs": float(np.abs(h["Cl"][m]).max()),
+        "cl_max_abs": float(np.abs(h["Cl"][m]).max()) if finite else float("nan"),
     }
 
 
@@ -354,7 +356,13 @@ def main():
         }
         TSRs = [3.0]
     else:
-        TSRs = TSR_VALUES
+        # TSR=1 is the dead-point case: |W| passes through zero twice per
+        # revolution and the physical loads (not just the reported Cl/Cd/Cm)
+        # can overflow in the wake-load integration. F18 covers the
+        # coefficient-reporting floor but not the load-integration blow-up.
+        # Excluded from the numerical convergence study; see
+        # BUGS_AND_ISSUES.md (new item U6).
+        TSRs = [t for t in TSR_VALUES if t != 1.0]  # TSR=1 diverges at dead point
 
     os.makedirs(out_dir, exist_ok=True)
     results = {
@@ -428,14 +436,21 @@ def main():
     base_by_tsr = {r["tsr"]: r["cp_mean"] for r in results["results"]
                    if r["param"] == "baseline"}
     for tsr in TSRs:
-        print(f"    TSR = {tsr:g}  (baseline Cp = {base_by_tsr.get(tsr, float('nan')):+.4f}):")
+        base = base_by_tsr.get(tsr, float('nan'))
+        if not np.isfinite(base):
+            print(f"    TSR = {tsr:g}  (baseline DIVERGED; TSR skipped in recommendation)")
+            continue
+        print(f"    TSR = {tsr:g}  (baseline Cp = {base:+.4f}):")
         for param in grids:
             sub = [r for r in rows if r["param"] == param and r["tsr"] == tsr
                    and not r["diverged"]]
             if not sub:
                 continue
             dev = max(abs(r["cp_mean"] - base_by_tsr[tsr]) for r in sub)
-            print(f"      {param:20s}: max|dCp| = {dev:+.4f}")
+            if not np.isfinite(dev):
+                print(f"      {param:20s}: max|dCp| = n/a")
+            else:
+                print(f"      {param:20s}: max|dCp| = {dev:+.4f}")
     print()
     print("  Settings are converged when max|dCp| is small (< ~0.02) and the")
     print("  Kelvin budget remains ~1e-13 with bounded wake population.")
