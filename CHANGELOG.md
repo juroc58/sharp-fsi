@@ -27,18 +27,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   study (panels, dt, wake_cap, substeps, coupling iters/tol/relax, stall on/off,
   vortex moment on/off, TSR = 1/3/4.5) writing CSV/JSON + plots, with a
   convergence-recommendation table. Key results:
-  - Numerical solver converged at documented defaults for TSR=1 and TSR=4.5
-    (max|dCp| < 0.02 across panels/dt/wake/coupling).
-  - At TSR=3 (design point): dt=0.005 shows moderate sensitivity
-    (max|dCp|=0.0472 — see U5), n_coupling_iter borderline at TSR=4.5 (0.0351).
-  - Stall model dominates all sensitivities (expected — physics change).
-  - Kelvin budget ~1e-13 across all cases; wake population bounded.
+  - Initial study (n_panels=32, n_coupling_iter=3 baseline):
+    - Converged at TSR=1 and TSR=4.5 for panels/wake/coupling.
+    - At TSR=3: dt=0.005 max|dCp|=0.0472 (documented limitation, U5).
+    - n_coupling_iter borderline at TSR=4.5 (max|dCp|=0.0351).
+  - After raising defaults to n_panels=48, n_coupling_iter=5
+    (see [Unreleased] ### Changed): n_panels max|dCp| at TSR=3 drops
+    to 0.0111 (converged).
+
+### Added
+- `pyproject.toml` (setuptools) with ruff and pytest configuration.
+- `tests/` — pytest-wrapped 54 verification checks + 1 skip-path test (55 total).
+- `.github/workflows/ci.yml` — `verify`, `convergence`, `no-jit` jobs.
+
+### Changed
+- **Production defaults raised**: `n_panels` 32 → 48, `n_coupling_iter` 3 → 5
+  in `scripts/run_crosscheck.py::CONFIG` and
+  `scripts/convergence_study.py::BASELINE`. Quick convergence study confirms
+  n_panels is now converged at TSR = 3 (`max|dCp| = 0.0111`, was 0.021).
+- **`scripts/run_validation.py` → `scripts/run_crosscheck.py`**: renamed to
+  avoid implying validation; no independent measured data exist.
+- **`validation_log_tsr3_stall.txt` → `crosscheck_log_tsr3_stall.txt`**.
 
 ## [1.0.0] - 2026-10-19
 
 Initial public release.
 
-### Added
+### Changed
 
 - **Fluid solver** (`fluid_solver.py`): unsteady 2-D discrete vortex method
   (1/4–3/4 lumped vortex lattice, `N+1` Katz–Plotkin system closed by the Kelvin
@@ -70,16 +85,6 @@ Initial public release.
 - **Validation runs and design study**: `run_validation.py` (single run),
   `design_study.py` (counterweight map + TSR sweep), `pitch_moment_check.py` and
   `moment_model_check.py` (pitching-moment diagnostics).
-
-### Changed
-
-- **Dead-point coefficient blow-up fixed.** At TSR = 1 the reference wind speed
-  `|W|` passes through zero twice per revolution, so the reported `Cl`, `Cd` and
-  `Cm` divided by an arbitrarily small dynamic pressure and blew up (a
-  *normalisation* artefact only — the forces were always bounded). Reported
-  coefficients now use a floored reference pressure
-  (`q_ref = ½ρ·max(|W|, 2.0 m/s)²`) and a `coeff_valid` flag marks the affected
-  samples. Physical loads are bit-identical to the un-floored solver (check F18).
 - **Stall closure improved.** Added a convecting leading-edge-vortex pitching
   moment (arm bounded to ±0.25 c) and an optional separation-driven deep-stall
   hand-over (`stall_blend_state`, **off by default** — it moves the pitch
@@ -89,6 +94,13 @@ Initial public release.
 
 ### Fixed
 
+- **Dead-point coefficient blow-up fixed.** At TSR = 1 the reference wind speed
+  `|W|` passes through zero twice per revolution, so the reported `Cl`, `Cd` and
+  `Cm` divided by an arbitrarily small dynamic pressure and blew up (a
+  *normalisation* artefact only — the forces were always bounded). Reported
+  coefficients now use a floored reference pressure
+  (`q_ref = ½ρ·max(|W|, 2.0 m/s)²`) and a `coeff_valid` flag marks the affected
+  samples. Physical loads are bit-identical to the un-floored solver (check F18).
 - **Wake-capacity overflow**: the deepest multiresolution merge level was never
   thinned, so a long low-wind run could overrun the wake arrays. All levels are
   now decimated and storage is sized accordingly.

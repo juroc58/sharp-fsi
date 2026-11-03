@@ -280,7 +280,7 @@ def test_bem_kinematics():
             PolarDatabase,
             SimConfig,
         )
-    except Exception as exc:                                    # pragma: no cover
+    except Exception as exc:  # noqa: BLE001                                 # pragma: no cover
         print(f"  [SKIP] sharp-vawt-lab import failed: {exc}")
         return None
 

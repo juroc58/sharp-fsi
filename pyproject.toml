@@ -56,10 +56,9 @@ dummy-variable-rgx = "^_.*"
 "moment_model_check.py" = ["BLE001"]
 "pitch_moment_check.py" = ["BLE001"]
 "scripts/convergence_study.py" = ["BLE001"]
-"verify_solver.py" = ["BLE001"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests", "scripts/convergence_study.py"]
+testpaths = ["tests"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
@@ -70,8 +69,4 @@ markers = [
 ]
 
 [tool.setuptools]
-py-modules = [
-    "fluid_solver", "structural_solver", "fsi_main", "aero_correction",
-    "ref_solver", "verify_solver", "compare_with_bem", "run_validation",
-    "design_study", "pitch_moment_check", "moment_model_check",
-]
+py-modules = ["fluid_solver", "structural_solver", "fsi_main", "aero_correction"]
