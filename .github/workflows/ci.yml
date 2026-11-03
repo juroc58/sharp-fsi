@@ -32,6 +32,9 @@ jobs:
       - name: Lint with ruff
         run: |
           ruff check .
+      - name: Run pytest
+        run: |
+          pytest -q -m "not slow"
 
       - name: Run verification suite (F1-F19)
         run: |
@@ -63,6 +66,9 @@ jobs:
       - name: Re-run verification after convergence study
         run: |
           python verify_solver.py
+      - name: Run full pytest
+        run: |
+          pytest -q
 
   # Pure-Python job: verifies the engine runs without any JIT compilation.
   # sharpFSI has no numba dependency, so this is a belt-and-braces check that
