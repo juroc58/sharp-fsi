@@ -59,7 +59,7 @@ dummy-variable-rgx = "^_.*"
 "verify_solver.py" = ["BLE001"]
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
+testpaths = ["tests", "scripts/convergence_study.py"]
 python_files = "test_*.py"
 python_classes = "Test*"
 python_functions = "test_*"
