@@ -30,18 +30,17 @@ from __future__ import annotations
 import os
 import sys
 
-import numpy as np
 import matplotlib
+import numpy as np
+
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import ref_solver                                                     # noqa: E402
-
+import ref_solver
 from fluid_solver import DVMFluidSolver
-from structural_solver import CPPCParams, CPPCStructural
 from fsi_main import FSICoupler
-
+from structural_solver import CPPCParams, CPPCStructural
 
 RESULTS = []
 
@@ -80,7 +79,7 @@ def impulsive_start(alpha_deg=5.0, dt=0.005, n_panels=48, n_steps=None):
     c = 1.0
     W = 10.0
     if n_steps is None:
-        n_steps = int(round(8.0 * c / (2 * W) / dt)) + 1
+        n_steps = round(8.0 * c / (2 * W) / dt) + 1
     s = DVMFluidSolver(chord=c, n_panels=n_panels, rho=1.225, dt=dt, sp=0.25,
                        wake_cap=max(900, n_steps + 5), core_bound=0.002,
                        core_wake=0.02)
@@ -161,7 +160,7 @@ def test_convergence():
     rows = []
     for N in (16, 32, 64):
         for dt in (0.02, 0.01, 0.005):
-            cl, cd, cm, _ = static_run(10.0, n_panels=N, dt=dt,
+            cl, _cd, _cm, _ = static_run(10.0, n_panels=N, dt=dt,
                                        n_steps=int(5.0 / dt), wake_cap=600)
             rows.append((N, dt, cl, 100 * abs(cl - ex) / ex))
             print(f"    N={N:3d} dt={dt:6.4f}  Cl={cl:.5f}  err={rows[-1][3]:.3f}%")
@@ -243,7 +242,7 @@ def test_coupled():
          f"nw+merges={fsi.fluid.nw + fsi.fluid.merge_count} steps={fsi.step_count}")
 
     # F9: the unsteady term must vanish once the flow is steady
-    cl_u, cd_u, cm_u, s_u = static_run(8.0, n_steps=300, average_last=40)
+    cl_u, _cd_u, _cm_u, s_u = static_run(8.0, n_steps=300, average_last=40)
     s_u.unsteady_force = False
     load = s_u.loads()
     dcl = abs(cl_u - load['Cl'])
@@ -271,8 +270,14 @@ def test_bem_kinematics():
     if root not in sys.path:
         sys.path.insert(0, root)
     try:
-        from vawt_core import (Geometry, MassProps, AeroConfig, SimConfig,
-                               PolarDatabase, CycloturbineSim)
+        from vawt_core import (
+            AeroConfig,
+            CycloturbineSim,
+            Geometry,
+            MassProps,
+            PolarDatabase,
+            SimConfig,
+        )
     except Exception as exc:                                    # pragma: no cover
         print(f"  [SKIP] sharp-vawt-lab import failed: {exc}")
         return None
@@ -364,9 +369,9 @@ def test_stall_transparency():
     dcl = dcm = 0.0
     kmin, kmax = 1.0, 1.0
     for a0 in (2.0, 4.0, 8.0, 12.0):
-        cl0, cd0_, cm0, _ = static_run(a0, n_panels=48, n_steps=700,
+        cl0, _cd0_, cm0, _ = static_run(a0, n_panels=48, n_steps=700,
                                        wake_cap=800, average_last=100)
-        cl1, cd1, cm1, km, sm = _stall_static(polar, a0)
+        cl1, _cd1, cm1, km, _sm = _stall_static(polar, a0)
         dcl = max(dcl, abs(cl1 - cl0))
         dcm = max(dcm, abs(cm1 - cm0))
         kmin, kmax = min(kmin, km), max(kmax, km)
@@ -381,7 +386,7 @@ def test_stall_static(polar, alphas=(16.0, 20.0, 30.0, 45.0, 60.0)):
     print("\nF12: corrected loads recover the prescribed static polar")
     rows = []
     for a0 in alphas:
-        cl, cd, cm, km, sm = _stall_static(polar, a0)
+        cl, cd, cm, km, _sm = _stall_static(polar, a0)
         clp, cdp, _ = polar.eval(np.deg2rad(a0))
         rows.append((a0, cl, clp, cd, cdp, cm, km))
     dcl = max(abs(r[1] - r[2]) for r in rows)
@@ -398,11 +403,11 @@ def test_stall_static(polar, alphas=(16.0, 20.0, 30.0, 45.0, 60.0)):
 
 def test_stall_deep(polar):
     print("\nF13: deep-stall limits")
-    cl, cd, cm, km, sm = _stall_static(polar, 90.0, n_steps=900)
+    cl, cd, cm, _km, _sm = _stall_static(polar, 90.0, n_steps=900)
     note("F13 Cl(90 deg) ~ 0", abs(cl) < 0.2, f"Cl={cl:+.4f}")
     note("F13 Cd(90 deg) ~ 2 (broadside flat plate)",
          abs(cd - 2.0) < 0.25, f"Cd={cd:.4f}")
-    cl2, cd2, cm2, km2, _ = _stall_static(polar, 170.0, n_steps=900)
+    cl2, cd2, _cm2, _km2, _ = _stall_static(polar, 170.0, n_steps=900)
     clp, _, _ = polar.eval(np.deg2rad(170.0))
     note("F13 reversed flow: Cl(170 deg) matches the reflected polar",
          abs(cl2 - clp) < 0.06, f"Cl={cl2:+.4f} (polar {clp:+.4f})")
@@ -677,7 +682,7 @@ def test_coeff_floor():
 
     # (ii) the sweep ends at |W| = 0.1 m/s, a factor 20 below the floor
     ratio = cl_t[-1] / cl_f[-1]
-    ws, flor, true = (10.0, 1.0, 0.2, 0.05), None, None
+    _ws, _flor, _true = (10.0, 1.0, 0.2, 0.05), None, None
     print(f"      at |W| = {Ws[-1]:.2f} m/s:  Cl(false q) = {cl_f[-1]:+.3f}   "
           f"Cl(true q) = {cl_t[-1]:+.3f}   ratio = {ratio:.0f}")
     note("F18 the floor caps the dead-point blow-up at (W_ref/W)^2",
@@ -692,8 +697,8 @@ def test_coeff_floor():
          f"max|Cl|_floored={mf:.3f} (bounded, the physical range); the "
          f"pointwise true/floored ratio reaches {mrat:.0f}")
     note("F18 coeff_valid flags exactly the floored samples",
-         [r[3] for r in rec_f][0] and not [r[3] for r in rec_f][-1],
-         f"valid at |W|=10: {[r[3] for r in rec_f][0]}, "
+         next(r[3] for r in rec_f) and not [r[3] for r in rec_f][-1],
+         f"valid at |W|=10: {next(r[3] for r in rec_f)}, "
          f"at |W|=0.1: {[r[3] for r in rec_f][-1]}")
 
     fig, ax = plt.subplots(1, 2, figsize=(10, 4.2))
@@ -807,17 +812,17 @@ def main():
     tau, cl, cl_j = test_wagner()
     rows = test_convergence()
     tt, hist, p = test_structural()
-    fsi, h = test_coupled()
+    _fsi, _h = test_coupled()
     kin = test_bem_kinematics()
     polar = test_stall_transparency()
     srows = test_stall_static(polar)
-    deep = test_stall_deep(polar)
+    test_stall_deep(polar)
     al_u, cl_u, cl_d, cl_st, al_d = test_stall_hysteresis(polar)
-    h_st = test_stall_coupled(polar)
-    we = test_wake_thinning()
-    wd = test_wake_drag()
-    cf = test_coeff_floor()
-    vm = test_vortex_moment(polar)
+    test_stall_coupled(polar)
+    test_wake_thinning()
+    test_wake_drag()
+    test_coeff_floor()
+    test_vortex_moment(polar)
 
     # ---- individual figures ---------------------------------------------
     fig, ax = plt.subplots(1, 3, figsize=(15, 4.2))

@@ -97,7 +97,7 @@ def wrap_pi(a):
 
 
 def _clip(x, lo, hi):
-    return lo if x < lo else (hi if x > hi else x)
+    return lo if x < lo else (min(x, hi))
 
 
 # ---------------------------------------------------------------------------
@@ -490,7 +490,7 @@ class StallModel:
             else:
                 self.ae = a
             ae = self.ae
-            (Cl_s, Cd_s, Cm_s, Cl_att, Cl_sep, den, f_s,
+            (Cl_s, Cd_s, Cm_s, _Cl_att, _Cl_sep, den, f_s,
              Cd_sep, Cm_sep) = self.static_states(ae)
             # --- separation lag
             self.f += (f_s - self.f) * min(1.0, dt / (self.T_f * tau))
@@ -525,7 +525,7 @@ class StallModel:
         # --- load reduction (recomputed from the frozen states; independent
         #     of the instantaneous alpha except through the kappa ratio)
         a = float(wrap_pi(alpha))
-        (Cl_s, Cd_s, Cm_s, Cl_att, Cl_sep, den, f_s,
+        (Cl_s, Cd_s, Cm_s, _Cl_att, _Cl_sep, den, f_s,
          Cd_sep, Cm_sep) = self.static_states(self.ae)
         Cl = Cl_s + (self.f - f_s) * den + self.vx
         Cd = Cd_s + (f_s - self.f) * (Cd_sep - Cd_s)
@@ -603,7 +603,7 @@ def _selftest():
     p = StaticPolar.viterna()
     print(' ', p)
     for deg in (0, 5, 14, 20, 30, 45, 60, 90, 135, 170, 180, -20, -135):
-        cl, cd, cm = p.eval(deg * D2R)
+        cl, cd, _cm = p.eval(deg * D2R)
         print(f'   alpha={deg:6.1f} deg  Cl={cl:+.4f}  Cd={cd:.4f}')
     # symmetry checks
     for deg in (20.0, 45.0, 135.0, 170.0):
@@ -614,7 +614,7 @@ def _selftest():
     print('  odd Cl / even Cd symmetry OK')
     # attached transparency
     a = np.linspace(-13, 13, 27) * D2R
-    cl, cd, cm = p.eval(a)
+    cl, cd, _cm = p.eval(a)
     err = np.max(np.abs(cl - TWO_PI * np.sin(a)))
     print(f'  attached |Cl - 2pi sin(a)| max = {err:.3e}   (should be ~0)')
     cl90, cd90, _ = p.eval(0.5 * np.pi)
@@ -628,7 +628,7 @@ def _selftest():
         for _ in range(4000):
             sm.begin_step()
             sm.update(deg * D2R, 10.0, 2.0e-3)
-        cl, cd, cm = p.eval(deg * D2R)
+        cl, cd, _cm = p.eval(deg * D2R)
         print(f'   alpha={deg:5.1f}  Cl={sm.Cl_ds:+.4f} (static {cl:+.4f})  '
               f'Cd={sm.Cd_ds:.4f} (static {cd:.4f})  kappa={sm.kappa:+.4f}')
 

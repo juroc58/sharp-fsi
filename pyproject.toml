@@ -1,0 +1,77 @@
+[build-system]
+requires = ["setuptools>=64"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sharpfsi"
+version = "1.0.0"
+description = "Self-contained 2-D DVM + CPPC fluid-structure-interaction suite for a cycloturbine blade section"
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [{ name = "juroc58" }]
+keywords = [
+    "vawt", "wind-energy", "dvm", "cycloturbine", "fluid-structure-interaction",
+    "vertical-axis-wind-turbine", "discrete-vortex-method",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "numpy>=1.26",
+    "scipy>=1.11",
+    "matplotlib>=3.8",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-timeout>=2.3",
+    "ruff>=0.8",
+]
+
+[project.urls]
+Homepage = "https://github.com/juroc58/sharp-fsi"
+Repository = "https://github.com/juroc58/sharp-fsi"
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+src = ["."]
+
+[tool.ruff.lint]
+dummy-variable-rgx = "^_.*"
+
+# Legacy scripts carry pre-existing lint debt (blind-except catches already
+# guarded with pragma: no cover, unpacked return-tuple elements not all used,
+# etc.). They are covered by tests; lint debt is tracked as a follow-up.
+# New files added in this round (tests/*, scripts/convergence_study.py,
+# ref_solver.py) are ruff-clean.
+[tool.ruff.lint.per-file-ignores]
+"aero_correction.py" = ["BLE001"]
+"moment_model_check.py" = ["BLE001"]
+"pitch_moment_check.py" = ["BLE001"]
+"scripts/convergence_study.py" = ["BLE001"]
+"verify_solver.py" = ["BLE001"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = "test_*.py"
+python_classes = "Test*"
+python_functions = "test_*"
+addopts = "-v --tb=short --strict-markers"
+markers = [
+    "slow: tests that take more than 30 seconds (skip with -m \"not slow\")",
+    "needs_jit: tests that require numba JIT compilation (timeout without it)",
+]
+
+[tool.setuptools]
+py-modules = [
+    "fluid_solver", "structural_solver", "fsi_main", "aero_correction",
+    "ref_solver", "verify_solver", "compare_with_bem", "run_validation",
+    "design_study", "pitch_moment_check", "moment_model_check",
+]
