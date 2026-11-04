@@ -8,4 +8,5 @@ sys.path.insert(0, "scripts")
 from verify_solver import main
 
 if __name__ == "__main__":
-    sys.exit(main())
+    ok = main()
+    sys.exit(0 if ok else 1)
