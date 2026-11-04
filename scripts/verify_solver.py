@@ -918,6 +918,7 @@ def main():
 
     # ---- summary ---------------------------------------------------------
     n_pass = sum(1 for _, ok, _ in RESULTS if ok)
+    n_fail = sum(1 for _, ok, _ in RESULTS if not ok)
     fig = plt.figure(figsize=(13, 7))
     ax = fig.add_subplot(111); ax.axis('off')
     lines = [f"sharpFSI verification summary   {n_pass}/{len(RESULTS)} checks passed",
@@ -935,7 +936,7 @@ def main():
     print("       verify_convergence.png, verify_structural.png, verify_stall.png"
           + (", verify_kinematics.png" if kin is not None else ""))
     print("=" * 70)
-    return n_pass == len(RESULTS)
+    return n_fail == 0
 
 
 # ============================================================================

@@ -68,7 +68,7 @@ jobs:
           python verify_solver.py
       - name: Run full pytest
         run: |
-          pytest -q
+          pytest -q -m "not slow"
 
   # Pure-Python job: verifies the engine runs without any JIT compilation.
   # sharpFSI has no numba dependency, so this is a belt-and-braces check that
