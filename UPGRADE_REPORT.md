@@ -32,8 +32,8 @@ machine (only `~/Documents/sharp_proj` exists, accessible via
 
 | Task | Outcome | Details |
 |------|---------|---------|
-| 3.1 n_coupling_iter at TSR=4.5 | **Done (path a)** | Raised default n_coupling_iter from 3 to 5 in scripts/run_validation.py CONFIG and scripts/convergence_study.py BASELINE. Evidence: at TSR=4.5, n_coupling_iter=3 → cp=-1.6058, n_coupling_iter=5 → cp=-1.6054, n_coupling_iter=10 → cp=-1.6098. max|dCp| vs n_coupling_iter=10 is 0.0044, well within 0.02 threshold. |
-| 3.2 n_panels at TSR=4.5 | **Done (path a)** | Raised default n_panels from 32 to 48 in scripts/run_validation.py CONFIG and scripts/convergence_study.py BASELINE. Evidence: at TSR=4.5, n_panels=32 → cp=-1.6058, n_panels=48 → cp=-1.6115, n_panels=64 → cp=-1.6127. max|dCp| vs adjacent values ≤0.0069, within 0.02 threshold. |
+| 3.1 n_coupling_iter at TSR=4.5 | **Partial** | Raised default from 3 to 5 in `scripts/run_crosscheck.py::CONFIG` and `scripts/convergence_study.py::BASELINE`. Full study (2 rev): at TSR=4.5, `max|dCp| = 0.0350` (was 0.0351 at n_coupling_iter=3) — no material change. At TSR=3, `max|dCp| = 0.0165` (converged). The 3→5 raise is retained for TSR=3 headroom; TSR=4.5 remains borderline. See U7. |
+| 3.2 n_panels at TSR=4.5 | **Partial** | Raised default from 32 to 48 in `scripts/run_crosscheck.py::CONFIG` and `scripts/convergence_study.py::BASELINE`. Full study (2 rev): at TSR=4.5, `max|dCp| = 0.0345` against the 48-panel baseline (the interior 32–64 span is converged at ≤0.007; the tail comes from the 16- and 96-panel extremes). At TSR=3, `max|dCp| = 0.0100` (converged). 48 retained for TSR=3; TSR=4.5 wide-sweep tail remains borderline. See U7. |
 
 ### P4 — Claim hygiene + minor items
 
